@@ -1,0 +1,83 @@
+/* Koyu tema genel stil */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #E0E0E0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center;
+}
+
+/* Sayfa başlık stili */
+h2 {
+    color: #F1C40F;
+    margin-bottom: 30px;
+}
+
+/* Form düzeni */
+form {
+    background-color: #2C3E50;
+    border-radius: 10px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Girdi alanları */
+label {
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: block;
+    color: #BDC3C7;
+}
+
+input[type="email"],
+input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #34495E;
+    background-color: #1C2833;
+    color: #E0E0E0;
+    font-size: 14px;
+}
+
+input[type="email"]:focus,
+input[type="file"]:focus {
+    border-color: #F39C12;
+    outline: none;
+}
+
+/* Buton stili */
+button {
+    background-color: #F39C12;
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #F1C40F;
+}
+
+/* Responsive tasarım */
+@media (max-width: 480px) {
+    h2 {
+        font-size: 24px;
+    }
+
+    form {
+        padding: 20px;
+        width: 90%;
+    }
+}
