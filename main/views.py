@@ -41,7 +41,19 @@ def yazar_sayfasi(request):
 
 from django.shortcuts import render
 
+from django.shortcuts import render, redirect
+from .models import User
+from django.contrib import messages
+
 def editor_page(request):
+    # Hakemler zaten var mı kontrol et
+    existing_reviewers = User.objects.filter(user_type='Hakem')
+    if len(existing_reviewers) < 10:
+        # 10 adet hakem oluştur
+        for i in range(1, 11):
+            if not User.objects.filter(username=f'hakem{i}').exists():
+                User.objects.create(username=f'hakem{i}', user_type='Hakem')
+        messages.success(request, "Hakemler başarıyla oluşturuldu.")
     return render(request, 'editor.html')
 
 def reviewer_page(request):
