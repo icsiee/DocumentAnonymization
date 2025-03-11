@@ -38,3 +38,14 @@ def yazar_sayfasi(request):
                 messages.error(request, "Böyle bir yazar sistemde kayıtlı değil!")
 
     return render(request, 'yazar.html', {'email': email, 'articles': articles})
+
+from django.shortcuts import render
+
+def editor_page(request):
+    return render(request, 'editor.html')
+
+def reviewer_page(request):
+    return render(request, 'reviewer.html')
+
+
+

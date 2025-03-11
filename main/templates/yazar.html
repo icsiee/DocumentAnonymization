@@ -9,6 +9,12 @@
 </head>
 <body>
     <div class="container">
+        <!-- Sayfalar Arası Geçiş Butonları -->
+        <div class="navigation-buttons">
+            <a href="{% url 'editor_page' %}" class="nav-button">Editör Sayfası</a>
+            <a href="{% url 'reviewer_page' %}" class="nav-button">Hakem Sayfası</a>
+        </div>
+
         <!-- Makale Yükleme Alanı -->
         <div class="card">
             <h2>Makale Yükleme</h2>
@@ -39,53 +45,50 @@
         </div>
 
       <!-- Makale Takip Alanı -->
-<div class="card">
-    <h2>Makale Sorgula</h2>
-    <form action="" method="post">
-        {% csrf_token %}
-        <div class="input-group">
-            <label for="email_sorgu">E-posta:</label>
-            <input type="email" id="email_sorgu" name="email" required>
-        </div>
-        <button type="submit">Sorgula</button>
-    </form>
-</div>
+      <div class="card">
+          <h2>Makale Sorgula</h2>
+          <form action="" method="post">
+              {% csrf_token %}
+              <div class="input-group">
+                  <label for="email_sorgu">E-posta:</label>
+                  <input type="email" id="email_sorgu" name="email" required>
+              </div>
+              <button type="submit">Sorgula</button>
+          </form>
+      </div>
 
-<!-- Sorgu Sonuçları -->
-{% if email %}
-    <div class="card">
-        <h3>{{ email }} adresine ait makaleler:</h3>
-        {% if articles %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Başlık</th>
-                        <th>Takip No</th>
-                        <th>Durum</th>
-                        <th>Yükleme Tarihi</th>
-                        <th>Makale Görüntüle</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for article in articles %}
-                        <tr>
-                            <td>{{ article.title }}</td>
-                            <td>{{ article.tracking_number }}</td>
-                            <td>{{ article.status }}</td>
-                            <td>{{ article.submission_date }}</td>
-                            <td><a href="{{ article.file.url }}" class="view-link" target="_blank">Makale Görüntüle</a></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>Bu e-posta adresine kayıtlı makale bulunamadı.</p>
-        {% endif %}
-    </div>
-{% endif %}
-
-
-
+      <!-- Sorgu Sonuçları -->
+      {% if email %}
+          <div class="card">
+              <h3>{{ email }} adresine ait makaleler:</h3>
+              {% if articles %}
+                  <table>
+                      <thead>
+                          <tr>
+                              <th>Başlık</th>
+                              <th>Takip No</th>
+                              <th>Durum</th>
+                              <th>Yükleme Tarihi</th>
+                              <th>Makale Görüntüle</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for article in articles %}
+                              <tr>
+                                  <td>{{ article.title }}</td>
+                                  <td>{{ article.tracking_number }}</td>
+                                  <td>{{ article.status }}</td>
+                                  <td>{{ article.submission_date }}</td>
+                                  <td><a href="{{ article.file.url }}" class="view-link" target="_blank">Makale Görüntüle</a></td>
+                              </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+              {% else %}
+                  <p>Bu e-posta adresine kayıtlı makale bulunamadı.</p>
+              {% endif %}
+          </div>
+      {% endif %}
     </div>
 </body>
 </html>

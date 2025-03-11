@@ -8,6 +8,9 @@ from .views import yazar_sayfasi
 urlpatterns = [
     path('', views.yazar_sayfasi, name='yazar_sayfasi'),
     path('yazar/', yazar_sayfasi, name='yazar_sayfasi'),
+path('editor/', views.editor_page, name='editor_page'),
+    path('reviewer/', views.reviewer_page, name='reviewer_page'),
+
 
 ]
 
