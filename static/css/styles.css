@@ -1,4 +1,4 @@
-/* Koyu tema genel stil */
+/* Genel Stil ve Sayfa Yapısı */
 body {
     font-family: Arial, sans-serif;
     background-color: #121212;
@@ -12,35 +12,53 @@ body {
     text-align: center;
 }
 
-/* Sayfa başlık stili */
-h2 {
+/* Sayfa Başlıkları */
+h2, h3 {
     color: #F1C40F;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
-/* Form düzeni */
-form {
+/* Kart Yapısı */
+.card {
     background-color: #2C3E50;
     border-radius: 10px;
-    padding: 40px;
+    padding: 30px;
     width: 100%;
-    max-width: 400px;
+    max-width: 800px;
     box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    margin: 20px 0;
 }
 
-/* Girdi alanları */
+/* Mesajlar */
+.messages {
+    margin-bottom: 20px;
+}
+
+.messages p.success {
+    color: green;
+}
+
+.messages p.error {
+    color: red;
+}
+
+/* Form Alanları */
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+}
+
 label {
     font-size: 16px;
-    margin-bottom: 8px;
-    display: block;
     color: #BDC3C7;
+    margin-bottom: 5px;
 }
 
-input[type="email"],
-input[type="file"] {
-    width: 100%;
+input[type="email"], input[type="file"] {
     padding: 12px;
-    margin-bottom: 20px;
+    margin-top: 5px;
     border-radius: 5px;
     border: 1px solid #34495E;
     background-color: #1C2833;
@@ -48,16 +66,15 @@ input[type="file"] {
     font-size: 14px;
 }
 
-input[type="email"]:focus,
-input[type="file"]:focus {
+input[type="email"]:focus, input[type="file"]:focus {
     border-color: #F39C12;
     outline: none;
 }
 
-/* Buton stili */
+/* Buton Stili */
 button {
     background-color: #F39C12;
-    color: #fff;
+    color: white;
     border: none;
     padding: 12px 20px;
     font-size: 16px;
@@ -70,14 +87,70 @@ button:hover {
     background-color: #F1C40F;
 }
 
-/* Responsive tasarım */
+/* Article List */
+.article-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.article-item {
+    padding: 10px;
+    border-bottom: 1px solid #34495E;
+}
+
+.view-link {
+    color: #F39C12;
+    text-decoration: none;
+}
+
+.view-link:hover {
+    text-decoration: underline;
+}
+
+/* Tablo Stil */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #34495E;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #2C3E50;
+    color: #F1C40F;
+}
+
+td {
+    background-color: #1C2833;
+    color: #BDC3C7;
+}
+
+/* Responsive Tasarım */
 @media (max-width: 480px) {
     h2 {
         font-size: 24px;
     }
 
-    form {
-        padding: 20px;
+    .card {
         width: 90%;
+        padding: 20px;
     }
+}
+
+/* Sayfa İçeriği */
+.container {
+    min-height: 100vh; /* Sayfanın tam yüksekliğini kapsaması için */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }

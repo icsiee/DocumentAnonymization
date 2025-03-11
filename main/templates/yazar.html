@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,31 +7,82 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
-
 <body>
-    <div>
-        <h2>Makale Yükleme</h2>
+    <div class="container">
+        <!-- Makale Yükleme Alanı -->
+        <div class="card">
+            <h2>Makale Yükleme</h2>
 
-        <!-- Mesajları Gösterme Alanı -->
-        {% if messages %}
-            <div>
-                {% for message in messages %}
-                    <p style="color: green;">{{ message }}</p>
-                {% endfor %}
+            <!-- Mesajları Gösterme Alanı -->
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <p class="{{ message.tags }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label for="email">E-posta:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="makale">Makale PDF:</label>
+                    <input type="file" id="makale" name="makale" accept=".pdf" required>
+                </div>
+
+                <button type="submit">Yükle</button>
+            </form>
+        </div>
+
+        <!-- Makale Takip Alanı -->
+        <div class="card">
+            <h2>Makale Sorgula</h2>
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label for="email_sorgu">E-posta:</label>
+                    <input type="email" id="email_sorgu" name="email" required>
+                </div>
+                <button type="submit">Sorgula</button>
+            </form>
+        </div>
+
+        <!-- Sorgu Sonuçları -->
+        {% if email %}
+            <div class="card">
+                <h3>{{ email }} adresine ait makaleler:</h3>
+                {% if articles %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Başlık</th>
+                                <th>Takip No</th>
+                                <th>Durum</th>
+                                <th>Yükleme Tarihi</th>
+                                <th>Makale Görüntüle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for article in articles %}
+                                <tr>
+                                    <td>{{ article.title }}</td>
+                                    <td>{{ article.tracking_number }}</td>
+                                    <td>{{ article.status }}</td>
+                                    <td>{{ article.submission_date }}</td>
+                                    <td><a href="{{ article.file.url }}" class="view-link" target="_blank">Makale Görüntüle</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>Bu e-posta adresine kayıtlı makale bulunamadı.</p>
+                {% endif %}
             </div>
         {% endif %}
-
-        <form action="" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <label for="email">E-posta:</label>
-            <input type="email" id="email" name="email" required><br>
-
-            <label for="makale">Makale PDF:</label>
-            <input type="file" id="makale" name="makale" accept=".pdf" required><br>
-
-            <button type="submit">Yükle</button>
-        </form>
     </div>
 </body>
-
 </html>
