@@ -1,10 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hakem Paneli</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
+    <div class="container">
+        <h1>Hakem Paneli</h1>
 
+        <!-- Hakem E-posta Sorgulama Formu -->
+        <form method="POST">
+            {% csrf_token %}
+            <label for="email">Hakem E-posta:</label>
+            <input type="email" name="email" id="email" required>
+            <button type="submit">Makale Sorgula</button>
+        </form>
+
+
+
+        <!-- Hakemlere Atanan Makaleler -->
+        <div class="article-list">
+                    <h2>Hakem: {{ email }}</h2>
+
+            <h2>Atanmış Makaleler</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Makale Başlığı</th>
+                        <th>Durum</th>
+                        <th>Değerlendirme Yap</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                        <tr>
+                            <td>{{ article.title }}</td>
+                            <td>{{ article.status }}</td>
+                            <td>
+                                <a href="{% url 'degerlendir' article.id %}">
+                                    <button class="btn">Değerlendir</button>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Değerlendirme Formu (Makale Seçildikten Sonra) -->
+        {% if selected_article %}
+        <div class="review-form">
+            <h2>{{ selected_article.title }} Değerlendirmesi</h2>
+            <form action="{% url 'submit_review' selected_article.id %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="review_text">Değerlendirme:</label>
+                    <textarea id="review_text" name="review_text" rows="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="comments">Yorumlar (Opsiyonel):</label>
+                    <textarea id="comments" name="comments" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn">Değerlendirmeyi Gönder</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Mesajlar -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <p class="{{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .container {
+            width: 80%;
+            margin: auto;
+        }
+
+        .article-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .article-list th, .article-list td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .review-form {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+        }
+    </style>
 </body>
 </html>

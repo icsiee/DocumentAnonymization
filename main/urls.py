@@ -10,8 +10,8 @@ urlpatterns = [
     path('yazar/', yazar_sayfasi, name='yazar_sayfasi'),
 path('editor/', views.editor_page, name='editor_page'),
     path('reviewer/', views.reviewer_page, name='reviewer_page'),
-
-
+path('reviewer/', views.reviewer_page, name='reviewer_page'),
+    path('review/<int:article_id>/', views.review_article, name='degerlendir'),
 ]
 
 # Media dosyalarını erişilebilir yapmak
