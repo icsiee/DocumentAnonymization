@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib import messages
 from .models import User, Article
+import uuid
 
 def yazar_sayfasi(request):
     articles = None  # Varsayılan olarak makale listesi boş
@@ -15,10 +16,9 @@ def yazar_sayfasi(request):
             user, created = User.objects.get_or_create(username=email, email=email, defaults={'is_active': True})
 
             # Makale kaydet
-            import uuid
             tracking_number = str(uuid.uuid4())[:10]
 
-            Article.objects.create(
+            article = Article.objects.create(
                 title="Makale Başlığı",
                 author=user,
                 file=makale,
@@ -26,13 +26,14 @@ def yazar_sayfasi(request):
             )
 
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
-            return render(request, 'yazar.html', {'email': email, 'articles': None})
+            # Sadece yüklenen makaleyi görüntülemek
+            articles = Article.objects.filter(author=user).order_by('-submission_date')
 
         else:
             # Kullanıcı e-postasına göre makale sorgulama
             try:
                 user = User.objects.get(email=email)
-                articles = Article.objects.filter(author=user)
+                articles = Article.objects.filter(author=user).order_by('-submission_date')  # Son yüklenen makale üstte
             except User.DoesNotExist:
                 messages.error(request, "Böyle bir yazar sistemde kayıtlı değil!")
 
