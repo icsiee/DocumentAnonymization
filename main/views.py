@@ -1,25 +1,29 @@
-from django.shortcuts import render
-
-from django.shortcuts import render
-
-from django.shortcuts import render
-
-from django.shortcuts import render
-from django.http import HttpResponse
-from .forms import MakaleForm
-
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import User, Article
+import uuid  # Benzersiz takip numarası oluşturmak için
 
 def yazar_sayfasi(request):
     if request.method == 'POST':
-        # Formu işleyin ve dosyayı kaydedin
         email = request.POST.get('email')
         makale = request.FILES.get('makale')
 
-        # Veritabanına veya dosya sistemine kaydetme işlemi burada yapılabilir
-        # Örneğin, dosya bir yerde saklanabilir
+        if email and makale:
+            # Kullanıcı mevcut değilse oluştur
+            user, created = User.objects.get_or_create(username=email, email=email, defaults={'is_active': True})
 
-        return HttpResponse("Makale başarıyla yüklendi!")
+            # Makale için benzersiz takip numarası oluştur
+            tracking_number = str(uuid.uuid4())[:10]  # Örneğin: 'a1b2c3d4e5'
+
+            # Makale kaydet
+            article = Article.objects.create(
+                title="Makale Başlığı",  # Burayı uygun şekilde değiştir
+                author=user,
+                file=makale,
+                tracking_number=tracking_number
+            )
+
+            messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
+            return redirect('yazar_sayfasi')  # Aynı sayfaya yönlendir
 
     return render(request, 'yazar.html')
-
-# Create your views here.

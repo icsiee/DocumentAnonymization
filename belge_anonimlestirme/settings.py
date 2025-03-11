@@ -28,6 +28,9 @@ DEBUG = True
 ALLOWED_HOSTS = []
 import os
 
+AUTH_USER_MODEL = 'main.User'
+
+
 # Dosya yükleme ayarları
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

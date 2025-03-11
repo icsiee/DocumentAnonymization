@@ -12,6 +12,16 @@
 <body>
     <div>
         <h2>Makale Yükleme</h2>
+
+        <!-- Mesajları Gösterme Alanı -->
+        {% if messages %}
+            <div>
+                {% for message in messages %}
+                    <p style="color: green;">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <form action="" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <label for="email">E-posta:</label>
