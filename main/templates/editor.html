@@ -11,6 +11,13 @@
     <div class="container">
         <h1>Editör Sayfası</h1>
 
+        <!-- Geri Dön Butonu -->
+        <div class="back-button">
+            <a href="{% url 'yazar_sayfasi' %}">
+                <button class="back-btn">Geri Dön</button>
+            </a>
+        </div>
+
         <!-- Hakemleri Yaratma Butonu -->
         <div class="card">
             <h2>Hakemleri Yarat</h2>
@@ -29,5 +36,26 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- Geri Dön Butonunun Stilini CSS ile Ekleme -->
+    <style>
+        .back-button {
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
 </body>
 </html>
