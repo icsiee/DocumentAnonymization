@@ -32,6 +32,7 @@ class Article(models.Model):
         ('Revize Edildi', 'Revize Edildi'),
         ('Tamamlandı', 'Tamamlandı'),
     ]
+    id = models.AutoField(primary_key=True)
 
     title = models.CharField(max_length=255)
     author = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Yazar'})

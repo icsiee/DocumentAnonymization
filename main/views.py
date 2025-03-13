@@ -3,22 +3,37 @@ from django.contrib import messages
 from .models import User, Article
 import uuid
 
+from django.shortcuts import render
+from django.contrib import messages
+from .models import User, Article
+import uuid
+
+from django.shortcuts import render
+from django.contrib import messages
+from .models import User, Article
+import uuid
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import User, Article
+import uuid
+
 def yazar_sayfasi(request):
-    articles = None  # Varsayılan olarak makale listesi boş
-    email = None
+    articles = None
+    email = request.session.get('email', None)  # Oturumdan e-posta al
 
     if request.method == 'POST':
         email = request.POST.get('email')
+        request.session['email'] = email  # E-postayı oturuma kaydet
+
+        # Yalnızca PDF formatında dosya yüklenebilir
         makale = request.FILES.get('makale')
 
-        if makale:
-            # Kullanıcıyı bul veya oluştur
+        if makale and makale.name.endswith('.pdf'):  # Yalnızca PDF kabul et
             user, created = User.objects.get_or_create(username=email, email=email, defaults={'is_active': True})
-
-            # Makale kaydet
             tracking_number = str(uuid.uuid4())[:10]
 
-            article = Article.objects.create(
+            Article.objects.create(
                 title="Makale Başlığı",
                 author=user,
                 file=makale,
@@ -26,18 +41,24 @@ def yazar_sayfasi(request):
             )
 
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
-            # Sadece yüklenen makaleyi görüntülemek
-            articles = Article.objects.filter(author=user).order_by('-submission_date')
 
+            # Başarıyla yüklenen makaleyi kaydettikten sonra formu sıfırla ve aynı sayfaya yönlendir
+            return redirect('yazar_sayfasi')  # Sayfayı yenileyerek formu sıfırla
+
+        elif makale:
+            messages.error(request, "Yalnızca PDF formatında makale yüklenebilir!")
         else:
-            # Kullanıcı e-postasına göre makale sorgulama
-            try:
-                user = User.objects.get(email=email)
-                articles = Article.objects.filter(author=user).order_by('-submission_date')  # Son yüklenen makale üstte
-            except User.DoesNotExist:
-                messages.error(request, "Böyle bir yazar sistemde kayıtlı değil!")
+            messages.warning(request, "Lütfen bir makale dosyası seçin.")
+
+    if email:
+        try:
+            user = User.objects.get(email=email)
+            articles = Article.objects.filter(author=user).order_by('-submission_date')  # Güncellenmiş liste
+        except User.DoesNotExist:
+            messages.error(request, "Böyle bir yazar sistemde kayıtlı değil!")
 
     return render(request, 'yazar.html', {'email': email, 'articles': articles})
+
 
 from django.shortcuts import render
 
@@ -125,5 +146,38 @@ def review_article(request, article_id):
 
     return render(request, 'review_article.html', {'selected_article': article})
 
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article  # Makale modelini içe aktar
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from .models import Article
 
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article
+from django.views.decorators.csrf import csrf_exempt
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from django.contrib import messages
+from .models import Article
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Article
+
+def delete_article(request, article_id):
+    try:
+        article = get_object_or_404(Article, id=article_id)
+        article.delete()
+        return JsonResponse({"success": True})  # ✅ Silme başarılı
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})  # ❌ Hata varsa bildir
