@@ -14,9 +14,10 @@ path('editor/', views.editor_page, name='editor_page'),
 path('reviewer/', views.reviewer_page, name='reviewer_page'),
     path('review/<int:article_id>/', views.review_article, name='degerlendir'),
     path('delete_article/<int:article_id>/', delete_article, name='delete_article'),
-
+ # Diğer URL desenleriniz
+    path('send_message/', views.send_message, name='send_message'),
+    # Mesaj gönderildiği zaman yönlendirilmek için bir URL
 ]
-
 # Media dosyalarını erişilebilir yapmak
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -181,3 +181,57 @@ def delete_article(request, article_id):
         return JsonResponse({"success": True})  # ✅ Silme başarılı
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})  # ❌ Hata varsa bildir
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .forms import MessageForm
+from .models import Message
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from .forms import MessageForm
+from .models import Message
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from .forms import MessageForm
+from .models import Message
+
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from .models import Message
+
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from main.models import User  # main.User modelini kullanıyoruz
+from .models import Message
+
+def send_message(request):
+    if request.method == 'POST':
+        # Kullanıcıdan gelen e-posta adresini alıyoruz
+        email = request.POST.get('email')
+        message_text = request.POST.get('message_text')
+
+        if email and message_text:
+            # E-posta adresi ile kullanıcıyı arıyoruz
+            user = User.objects.filter(email=email).first()
+
+            # Eğer kullanıcı bulunmazsa, yeni bir kullanıcı oluşturuyoruz
+            if not user:
+                user = User.objects.create_user(username=email, email=email)  # Kullanıcıyı kaydediyoruz
+
+            # Mesajı veritabanına kaydediyoruz
+            message = Message(sender=user, receiver=User.objects.get(user_type='Editor'), message_text=message_text)
+            message.save()
+
+            # Başarı mesajını ekliyoruz
+            messages.success(request, 'Mesajınız başarıyla gönderildi!')
+
+            # Aynı sayfada kalıp başarı mesajını gösteriyoruz
+            return redirect('yazar_sayfasi')  # yazar.html sayfası için url adı buraya yazılmalı
+
+    return render(request, 'send_message.html')
+
+
