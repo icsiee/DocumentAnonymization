@@ -18,6 +18,15 @@
             </a>
         </div>
 
+        <!-- Makaleleri Silme Butonu -->
+        <div class="card">
+            <h2>Tüm Makaleleri Sil</h2>
+            <form action="{% url 'delete_all_articles' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 16px;">Tüm Makaleleri Sil</button>
+            </form>
+        </div>
+
         <!-- Hakemleri Yaratma Butonu -->
         <div class="card">
             <h2>Hakemleri Yarat</h2>
@@ -25,6 +34,40 @@
                 {% csrf_token %}
                 <button type="submit">Hakemleri Yarat</button>
             </form>
+        </div>
+
+        <!-- Makale Listesi -->
+        <div class="card">
+            <h2>Yüklenmiş Makaleler</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Takip Numarası</th> <!-- Takip Numarası Sütunu Eklendi -->
+                        <th>Başlık</th>
+                        <th>Yazar</th>
+                        <th>Durum</th>
+                        <th>Gönderim Tarihi</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                        <tr>
+                            <td>{{ article.tracking_number }}</td> <!-- Takip Numarası Ekleniyor -->
+                            <td>{{ article.title }}</td>
+                            <td>{{ article.author.username }}</td>
+                            <td>{{ article.get_status_display }}</td>
+                            <td>{{ article.submission_date }}</td>
+                            <td>
+                                <!-- İşlem Butonları veya Linkler -->
+                                <a href="#">Detaylar</a> |
+                                <a href="#">Onayla</a> |
+                                <a href="#">Revize Et</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
         <!-- Mesajları Gösterme Alanı -->
@@ -36,26 +79,5 @@
             </div>
         {% endif %}
     </div>
-
-    <!-- Geri Dön Butonunun Stilini CSS ile Ekleme -->
-    <style>
-        .back-button {
-            margin-bottom: 20px;
-        }
-
-        .back-btn {
-            background-color: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .back-btn:hover {
-            background-color: #c82333;
-        }
-    </style>
 </body>
 </html>

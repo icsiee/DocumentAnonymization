@@ -72,6 +72,8 @@ from .models import User
 
 
 def editor_page(request):
+    # Tüm makaleleri veritabanından çek
+    articles = Article.objects.all()
     # Hakemler zaten var mı kontrol et
     existing_reviewers = User.objects.filter(user_type='Hakem')
     if len(existing_reviewers) < 10:
@@ -84,7 +86,7 @@ def editor_page(request):
     else:
         messages.info(request, "Hakemler zaten oluşturulmuş.")
 
-    return render(request, 'editor.html')
+    return render(request, 'editor.html', {'articles': articles})
 
 
 def reviewer_page(request):
@@ -234,4 +236,49 @@ def send_message(request):
 
     return render(request, 'send_message.html')
 
+import os
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+import os
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+import os
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+
+def delete_all_articles(request):
+    if request.method == "POST":
+        # Veritabanındaki tüm makaleleri al
+        articles = Article.objects.all()
+
+        for article in articles:
+            # Dosya yolunu bul
+            article_file_path = os.path.join(settings.MEDIA_ROOT, 'articles', article.file.name)
+
+            # Dosyanın var olup olmadığını kontrol et ve sil
+            if os.path.exists(article_file_path):
+                try:
+                    os.remove(article_file_path)
+                    messages.success(request, f"{article_file_path} başarıyla silindi.")
+                except Exception as e:
+                    messages.error(request, f"Dosya silinirken hata oluştu: {str(e)}")
+                    continue
+            else:
+                messages.warning(request, f"Dosya bulunamadı: {article_file_path}")
+
+            # Makaleyi veritabanından sil
+            article.delete()
+
+        messages.success(request, "Tüm makaleler ve dosyalar başarıyla silindi.")
+        return redirect('editor_page')  # Editör sayfasına yönlendir
+    return render(request, 'editor_page.html')
 
