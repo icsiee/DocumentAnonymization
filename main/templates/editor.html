@@ -35,9 +35,26 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+        <!-- Gelen Mesajlar Bölümü -->
+        <div class="messages-section">
+            <h2>Gelen Mesajlar</h2>
+            {% if editor_messages %}
+                <ul class="message-list">
+                    {% for message in editor_messages %}
+                        <li class="message-item">
+                            <strong>{{ message.sender.email }}</strong> - {{ message.sent_date|date:"d/m/Y H:i" }}<br>
+                            {{ message.message_text }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Henüz mesaj yok.</p>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Geri Dön Butonunun Stilini CSS ile Ekleme -->
+    <!-- Stil Ayarları -->
     <style>
         .back-button {
             margin-bottom: 20px;
@@ -55,6 +72,30 @@
 
         .back-btn:hover {
             background-color: #c82333;
+        }
+
+        .messages-section {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .message-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 5px;
+            color:#000;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
         }
     </style>
 </body>

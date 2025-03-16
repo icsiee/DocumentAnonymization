@@ -22,3 +22,11 @@ class MessageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Alıcıyı (editörü) sınırlıyoruz.
         self.fields['receiver'].queryset = User.objects.filter(user_type='Editör')  # Kullanıcı türüne göre
+
+from django import forms
+from .models import EditorMessage
+
+class EditorMessageForm(forms.ModelForm):
+    class Meta:
+        model = EditorMessage
+        fields = ['sender_email', 'content']

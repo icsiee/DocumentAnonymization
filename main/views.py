@@ -74,6 +74,9 @@ from .models import User
 def editor_page(request):
     # Hakemler zaten var mı kontrol et
     existing_reviewers = User.objects.filter(user_type='Hakem')
+    editor_id=User.objects.filter(user_type='Editör').first()
+    editor_messages = Message.objects.filter(receiver=editor_id).order_by('-sent_date')
+    print(editor_messages)
     if len(existing_reviewers) < 10:
         # 10 adet hakem oluştur
         for i in range(1, 11):
@@ -84,7 +87,7 @@ def editor_page(request):
     else:
         messages.info(request, "Hakemler zaten oluşturulmuş.")
 
-    return render(request, 'editor.html')
+    return render(request, 'editor.html',{'editor_messages': editor_messages})
 
 
 def reviewer_page(request):
@@ -233,5 +236,27 @@ def send_message(request):
             return redirect('yazar_sayfasi')  # yazar.html sayfası için url adı buraya yazılmalı
 
     return render(request, 'send_message.html')
+
+
+from django.shortcuts import render, redirect
+from .models import EditorMessage
+from .forms import EditorMessageForm
+
+# Yazarın editöre mesaj göndermesi için
+def submit_editor_message(request):
+    if request.method == "POST":
+        form = EditorMessageForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('message_submitted')  # Başarılı gönderim sonrası yönlendirme
+    else:
+        form = EditorMessageForm()
+    return render(request, 'submit_editor_message.html', {'form': form})
+
+# Editörün mesajları görmesi için
+def list_editor_messages(request):
+    editor_messages = Message.objects.all().filter(receiver_id=request.user.id).order_by('-sent_date')
+    print(editor_messages)
+    return render(request, 'editor.html', {'editor_messages': editor_messages})
 
 
