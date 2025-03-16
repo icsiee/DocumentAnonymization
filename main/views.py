@@ -1,76 +1,118 @@
-from django.shortcuts import render
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import User, Article
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from .models import Article, Assignment, Message, Review
 import uuid
+import os
 
-from django.shortcuts import render
-from django.contrib import messages
-from .models import User, Article
-import uuid
+# Kullanıcı modelini doğru şekilde al
+User = get_user_model()
 
-from django.shortcuts import render
-from django.contrib import messages
-from .models import User, Article
-import uuid
+# Makale yükleme sayfası
+def makale_yukle(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')  # Kullanıcının e-posta adresini al
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import User, Article
-import uuid
+        if not email:
+            messages.error(request, "Lütfen geçerli bir e-posta adresi girin.")
+            return redirect('makale_yukle')
 
+        # Kullanıcıyı e-posta adresiyle bul veya oluştur
+        user, created = User.objects.get_or_create(email=email, defaults={'username': email, 'user_type': 'Yazar', 'is_active': True})
+
+        # Eğer kullanıcı türü Yazar değilse, hata mesajı ver
+        if user.user_type != 'Yazar':
+            messages.error(request, "Sadece Yazarlar makale yükleyebilir.")
+            return redirect('makale_yukle')
+
+        # Yüklenen dosyayı al
+        makale = request.FILES.get('makale')
+
+        if makale:
+            # Yalnızca PDF dosyalarını kabul et
+            if makale.name.endswith('.pdf'):
+                tracking_number = str(uuid.uuid4())[:10]  # Takip numarası oluştur
+
+                # Makale oluştur
+                Article.objects.create(
+                    title="Makale Başlığı",  # Başlık, formda kullanıcı tarafından alınabilir
+                    author=user,
+                    file=makale,
+                    tracking_number=tracking_number
+                )
+
+                messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
+                return redirect('yazar_sayfasi')  # Yazar sayfasına yönlendir
+
+            else:
+                messages.error(request, "Yalnızca PDF formatında makale yüklenebilir!")
+        else:
+            messages.warning(request, "Lütfen bir makale dosyası seçin.")
+
+    return render(request, 'makale_yukle.html')
+
+# Yazar sayfası
 def yazar_sayfasi(request):
     articles = None
     email = request.session.get('email', None)  # Oturumdan e-posta al
 
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        request.session['email'] = email  # E-postayı oturuma kaydet
-
-        # Yalnızca PDF formatında dosya yüklenebilir
-        makale = request.FILES.get('makale')
-
-        if makale and makale.name.endswith('.pdf'):  # Yalnızca PDF kabul et
-            user, created = User.objects.get_or_create(username=email, email=email, defaults={'is_active': True})
-            tracking_number = str(uuid.uuid4())[:10]
-
-            Article.objects.create(
-                title="Makale Başlığı",
-                author=user,
-                file=makale,
-                tracking_number=tracking_number
-            )
-
-            messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
-
-            # Başarıyla yüklenen makaleyi kaydettikten sonra formu sıfırla ve aynı sayfaya yönlendir
-            return redirect('yazar_sayfasi')  # Sayfayı yenileyerek formu sıfırla
-
-        elif makale:
-            messages.error(request, "Yalnızca PDF formatında makale yüklenebilir!")
-        else:
-            messages.warning(request, "Lütfen bir makale dosyası seçin.")
-
     if email:
         try:
             user = User.objects.get(email=email)
-            articles = Article.objects.filter(author=user).order_by('-submission_date')  # Güncellenmiş liste
+            articles = Article.objects.filter(author=user).order_by('-submission_date')  # Yazarın makalelerini al
         except User.DoesNotExist:
             messages.error(request, "Böyle bir yazar sistemde kayıtlı değil!")
 
-    return render(request, 'yazar.html', {'email': email, 'articles': articles})
+    return render(request, 'makalesistemi.html', {'email': email, 'articles': articles})
 
-
-from django.shortcuts import render
-
-from django.shortcuts import render, redirect
-from .models import User
+from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
+from .models import Article
 
 from django.shortcuts import render
 from django.contrib import messages
-from .models import User
+from .models import Article
+
+from django.shortcuts import render
+from .models import Article  # Article modelinizin import edildiğinden emin olun
+from django.contrib import messages
+
+from django.shortcuts import render
+from .models import Article  # Makale modelini içe aktarıyoruz
+from django.contrib import messages
 
 
+def makale_durum_sorgulama(request):
+    article = None
+    articles = None
+    author_articles = None  # Yazarın diğer makaleleri
+
+    if request.method == "POST":
+        tracking_number = request.POST.get("tracking_number", "").strip()
+        email = request.POST.get("email", "").strip()
+
+        if tracking_number:  # Eğer sadece takip numarası girildiyse
+            try:
+                article = Article.objects.get(tracking_number=tracking_number)
+                author_articles = Article.objects.filter(author=article.author).exclude(tracking_number=tracking_number)
+            except Article.DoesNotExist:
+                messages.error(request, "Bu takip numarasına ait makale bulunamadı.")
+
+        elif email:  # Eğer sadece e-posta girildiyse
+            articles = Article.objects.filter(author__email=email)
+            if not articles:
+                messages.error(request, "Bu e-posta adresine ait makale bulunamadı.")
+
+    return render(request, "makaledurumsorgulama.html", {
+        "article": article,
+        "articles": articles,
+        "author_articles": author_articles,
+    })
+
+
+# Editör sayfası
 def editor_page(request):
     # Tüm makaleleri veritabanından çek
     articles = Article.objects.all()
@@ -88,22 +130,7 @@ def editor_page(request):
 
     return render(request, 'editor.html', {'articles': articles})
 
-
-def reviewer_page(request):
-    return render(request, 'reviewer.html')
-
-
-# views.py
-
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Article, Review
-from django.contrib import messages
-
-from django.shortcuts import render
-from django.contrib import messages
-from .models import User, Article, Assignment
-
-
+# Hakem sayfası
 def reviewer_page(request):
     reviewer_articles = None
     email = None
@@ -127,7 +154,7 @@ def reviewer_page(request):
 
     return render(request, 'reviewer.html', {'email': email, 'articles': reviewer_articles})
 
-
+# Makale değerlendirme sayfası
 def review_article(request, article_id):
     article = get_object_or_404(Article, pk=article_id)
 
@@ -148,34 +175,7 @@ def review_article(request, article_id):
 
     return render(request, 'review_article.html', {'selected_article': article})
 
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from .models import Article  # Makale modelini içe aktar
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.contrib import messages
-from .models import Article
-
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from .models import Article
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from .models import Article
-from django.views.decorators.csrf import csrf_exempt
-
-from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
-from django.contrib import messages
-from .models import Article
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Article
-
+# Makale silme
 def delete_article(request, article_id):
     try:
         article = get_object_or_404(Article, id=article_id)
@@ -184,32 +184,7 @@ def delete_article(request, article_id):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})  # ❌ Hata varsa bildir
 
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import MessageForm
-from .models import Message
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from .forms import MessageForm
-from .models import Message
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from .forms import MessageForm
-from .models import Message
-
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from .models import Message
-
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from main.models import User  # main.User modelini kullanıyoruz
-from .models import Message
-
+# Mesaj gönderme
 def send_message(request):
     if request.method == 'POST':
         # Kullanıcıdan gelen e-posta adresini alıyoruz
@@ -232,29 +207,11 @@ def send_message(request):
             messages.success(request, 'Mesajınız başarıyla gönderildi!')
 
             # Aynı sayfada kalıp başarı mesajını gösteriyoruz
-            return redirect('yazar_sayfasi')  # yazar.html sayfası için url adı buraya yazılmalı
+            return redirect('yazar_sayfasi')  # makalesistemi.html sayfası için url adı buraya yazılmalı
 
     return render(request, 'send_message.html')
 
-import os
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Article
-
-import os
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Article
-
-import os
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Article
-
-
+# Tüm makaleleri silme
 def delete_all_articles(request):
     if request.method == "POST":
         # Veritabanındaki tüm makaleleri al
@@ -281,4 +238,3 @@ def delete_all_articles(request):
         messages.success(request, "Tüm makaleler ve dosyalar başarıyla silindi.")
         return redirect('editor_page')  # Editör sayfasına yönlendir
     return render(request, 'editor_page.html')
-

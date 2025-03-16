@@ -9,7 +9,10 @@ from .views import delete_article
 urlpatterns = [
     path('', views.yazar_sayfasi, name='yazar_sayfasi'),
     path('yazar/', yazar_sayfasi, name='yazar_sayfasi'),
-path('editor/', views.editor_page, name='editor_page'),
+    path('makale_yukle/', views.makale_yukle, name='makale_yukle'),  # Yeni URL ekleyin
+    path('makale_durum_sorgulama/', views.makale_durum_sorgulama, name='makale_durum_sorgulama'),
+
+    path('editor/', views.editor_page, name='editor_page'),
     path('reviewer/', views.reviewer_page, name='reviewer_page'),
 path('reviewer/', views.reviewer_page, name='reviewer_page'),
     path('review/<int:article_id>/', views.review_article, name='degerlendir'),
