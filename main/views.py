@@ -243,37 +243,103 @@ def delete_all_articles(request):
         return redirect('editor_page')  # Editör sayfasına yönlendir
     return render(request, 'editor_page.html')
 
-# Makale Revize Etme Sayfası
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Article
 
 from django.shortcuts import render, get_object_or_404, redirect
+from .models import Article
+from .utils import create_pdf_from_text  # PDF oluşturma fonksiyonu
+from .forms import ArticleForm
 from django.contrib import messages
+from django.core.files.base import ContentFile
+from .utils import extract_text_from_pdf
+
+import fitz  # PyMuPDF
+from django.http import HttpResponse
+from django.shortcuts import render
+from .models import Article
+from .forms import ArticleForm
+
+
+
+import fitz  # PyMuPDF
+
+import fitz  # PyMuPDF
+import re
+
+
+def extract_text_and_images_from_pdf(pdf_path):
+    html_content = ""
+
+    doc = fitz.open(pdf_path)
+
+    for page_num in range(doc.page_count):
+        page = doc.load_page(page_num)
+
+        # Sayfa metnini çekiyoruz
+        page_text = page.get_text("html")  # HTML formatında metni alıyoruz
+
+        # Sayfa metnindeki sütunları birleştiriyoruz
+        page_text = remove_columns(page_text)
+
+        # Sayfadaki görselleri alıyoruz
+        for img_index, img in enumerate(page.get_images(full=True)):
+            xref = img[0]
+            base_image = doc.extract_image(xref)
+            image_bytes = base_image["image"]
+            image_filename = f"image_{page_num + 1}_{img_index + 1}.png"
+
+            # Görseli kaydediyoruz
+            with open(f"media/images/{image_filename}", "wb") as img_file:
+                img_file.write(image_bytes)
+
+            # Görselin HTML içindeki yolunu tutuyoruz
+            image_url = f"/media/images/{image_filename}"
+            page_text += f'<img src="{image_url}" alt="Image {img_index + 1}" />'
+
+        html_content += page_text  # Metni HTML formatında biriktiriyoruz
+
+    return html_content
+
+
+def remove_columns(html_content):
+    """
+    PDF'den alınan HTML içeriğindeki sütunları ve karışık yapıları düzeltir.
+    """
+
+    # <div> ve <span> gibi öğeleri temizliyoruz ve düzenli bir metin formatına getiriyoruz.
+    html_content = re.sub(r'<div[^>]*class="[^"]*column[^"]*"[^>]*>', '', html_content)  # Column div'lerini kaldır
+    html_content = re.sub(r'</div>', '', html_content)  # Kapanan div'leri kaldır
+
+    # Eğer <span> gibi öğeler varsa, bunları da temizliyoruz.
+    html_content = re.sub(r'<span[^>]*>', '', html_content)
+    html_content = re.sub(r'</span>', '', html_content)
+
+    # Boşlukları düzenli hale getiriyoruz
+    html_content = re.sub(r'\s+', ' ', html_content)
+
+    # Gereksiz boşlukları, yeni satırları temizliyoruz
+    html_content = re.sub(r'\n+', '<br>', html_content)
+
+    return html_content
+
+
+from django.shortcuts import render
+from .models import Article
+from django.conf import settings
+
+from django.shortcuts import render
+from .models import Article
+from django.shortcuts import render
 from .models import Article
 
 def revize_et(request, article_id):
-    # Makale mevcut
-    article = get_object_or_404(Article, id=article_id)
+    article = Article.objects.get(id=article_id)
+    if request.method == "GET":
+        # PDF içeriğini çekiyoruz
+        html_content = extract_text_and_images_from_pdf(article.file.path)
 
-    if request.method == 'POST':
-        # Yüklenen dosya var mı?
-        updated_file = request.FILES.get('updated_file')
+        # HTML içeriği template'e gönderiyoruz
+        return render(request, "revize_et.html", {
+            "article": article,
+            "pdf_content": html_content,  # HTML içeriği gönderiyoruz
+        })
 
-        if updated_file:
-            # Yalnızca PDF dosyasını kabul et
-            if updated_file.name.endswith('.pdf'):
-                # Makale dosyasını güncelle
-                article.file = updated_file
-                article.status = 'Revize Edilmiş'  # Makale statüsünü revize edilmiş olarak güncelle
-
-                article.save()
-                messages.success(request, "Makale başarıyla revize edilmiştir.")
-                return redirect('makale_durum_sorgulama')  # Makale sorgulama sayfasına yönlendir
-
-            else:
-                messages.error(request, "Sadece PDF formatındaki dosyalar kabul edilir.")
-        else:
-            messages.warning(request, "Lütfen revize edilmiş bir dosya yükleyin.")
-
-    return render(request, 'revize_et.html', {'article': article})

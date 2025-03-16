@@ -6,7 +6,7 @@ from .views import yazar_sayfasi
 from .views import delete_article
 
 
-urlpatterns = [
+urlpatterns = ([
     path('', views.yazar_sayfasi, name='yazar_sayfasi'),
     path('yazar/', yazar_sayfasi, name='yazar_sayfasi'),
     path('makale_yukle/', views.makale_yukle, name='makale_yukle'),  # Yeni URL ekleyin
@@ -21,9 +21,10 @@ path('reviewer/', views.reviewer_page, name='reviewer_page'),
     path('send_message/', views.send_message, name='send_message'),
     # Mesaj gönderildiği zaman yönlendirilmek için bir URL
 path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
-    path('makale/revize_et/<int:article_id>/', views.revize_et, name='revize_et'),
+    path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),  # Makale ID'si ile revize etme sayfasına yönlendir
+              ]
 
-]
+               + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
 
 # Media dosyalarını erişilebilir yapmak
 if settings.DEBUG:

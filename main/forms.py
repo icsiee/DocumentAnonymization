@@ -22,3 +22,26 @@ class MessageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Alıcıyı (editörü) sınırlıyoruz.
         self.fields['receiver'].queryset = User.objects.filter(user_type='Editör')  # Kullanıcı türüne göre
+
+
+from django import forms
+from .models import Article
+
+
+class ArticleForm(forms.ModelForm):
+    class Meta:
+        model = Article
+        fields = ['title', 'file', 'content']  # Hangi alanların formda yer alacağını belirtiyoruz
+
+    content = forms.CharField(
+        widget=forms.Textarea(attrs={'cols': 80, 'rows': 20, 'placeholder': 'Makale içeriğini buraya yazınız.'}),
+        required=False,
+        label="Makale İçeriği"
+    )
+
+    file = forms.FileField(
+        required=False,  # PDF dosyasını yüklemek isteğe bağlıdır
+        label="Makale PDF Dosyası"
+    )
+
+    # İsteğe bağlı olarak, daha fazla form alanı eklenebilir.
