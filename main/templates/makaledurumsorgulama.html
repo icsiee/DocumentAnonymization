@@ -14,15 +14,15 @@
 </head>
 <body class="bg-light">
     <div class="container mt-5">
-        <!-- Geri Dön Butonu -->
-        <a href="javascript:history.back()" class="btn btn-secondary mb-3">
-            ⬅ Geri Dön
-        </a>
+       <!-- Geri Dön Butonu -->
+<a href="{% url 'makale_yukle' %}" class="btn btn-secondary mb-3">
+    ⬅ Geri Dön
+</a>
+
 
         <div class="card shadow-lg p-4">
             <h2 class="text-center text-primary">📄 Makale Durumu Sorgulama</h2>
             <hr>
-
 
             <!-- Mesajları Göster -->
             {% if messages %}
@@ -60,6 +60,8 @@
                         <tr><th>📊 Durum:</th><td>{{ article.status }}</td></tr>
                         <tr><th>📅 Yükleme Tarihi:</th><td>{{ article.submission_date }}</td></tr>
                     </table>
+                    <!-- Revize Etme Butonu -->
+                    <a href="{% url 'revize_et' article.id %}" class="btn btn-warning w-100 mt-3">🔄 Revize Et</a>
                 </div>
 
                 {% if author_articles %}
@@ -71,6 +73,7 @@
                                     <th>📖 Başlık</th>
                                     <th>📌 Takip Numarası</th>
                                     <th>📊 Durum</th>
+                                    <th>📄 İşlemler</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -79,6 +82,9 @@
                                         <td>{{ makale.title }}</td>
                                         <td>{{ makale.tracking_number }}</td>
                                         <td>{{ makale.status }}</td>
+                                        <td>
+                                            <a href="{% url 'revize_et' makale.id %}" class="btn btn-warning btn-sm">🔄 Revize Et</a>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -94,6 +100,7 @@
                                 <th>📖 Başlık</th>
                                 <th>📌 Takip Numarası</th>
                                 <th>📊 Durum</th>
+                                <th>📄 İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -102,6 +109,9 @@
                                     <td>{{ makale.title }}</td>
                                     <td>{{ makale.tracking_number }}</td>
                                     <td>{{ makale.status }}</td>
+                                    <td>
+                                        <a href="{% url 'revize_et' makale.id %}" class="btn btn-warning btn-sm">🔄 Revize Et</a>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>

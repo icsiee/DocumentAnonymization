@@ -9,14 +9,18 @@ import os
 
 # Kullanıcı modelini doğru şekilde al
 User = get_user_model()
-
 # Makale yükleme sayfası
 def makale_yukle(request):
     if request.method == 'POST':
         email = request.POST.get('email')  # Kullanıcının e-posta adresini al
+        title = request.POST.get('title')  # Kullanıcının makale başlığını al
 
         if not email:
             messages.error(request, "Lütfen geçerli bir e-posta adresi girin.")
+            return redirect('makale_yukle')
+
+        if not title:
+            messages.error(request, "Lütfen makale başlığını girin.")
             return redirect('makale_yukle')
 
         # Kullanıcıyı e-posta adresiyle bul veya oluştur
@@ -37,7 +41,7 @@ def makale_yukle(request):
 
                 # Makale oluştur
                 Article.objects.create(
-                    title="Makale Başlığı",  # Başlık, formda kullanıcı tarafından alınabilir
+                    title=title,  # Kullanıcı tarafından girilen başlık
                     author=user,
                     file=makale,
                     tracking_number=tracking_number
@@ -51,7 +55,7 @@ def makale_yukle(request):
         else:
             messages.warning(request, "Lütfen bir makale dosyası seçin.")
 
-    return render(request, 'makale_yukle.html')
+    return render(request, 'makalesistemi.html')
 
 # Yazar sayfası
 def yazar_sayfasi(request):
@@ -238,3 +242,38 @@ def delete_all_articles(request):
         messages.success(request, "Tüm makaleler ve dosyalar başarıyla silindi.")
         return redirect('editor_page')  # Editör sayfasına yönlendir
     return render(request, 'editor_page.html')
+
+# Makale Revize Etme Sayfası
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article
+
+def revize_et(request, article_id):
+    # Makale mevcut
+    article = get_object_or_404(Article, id=article_id)
+
+    if request.method == 'POST':
+        # Yüklenen dosya var mı?
+        updated_file = request.FILES.get('updated_file')
+
+        if updated_file:
+            # Yalnızca PDF dosyasını kabul et
+            if updated_file.name.endswith('.pdf'):
+                # Makale dosyasını güncelle
+                article.file = updated_file
+                article.status = 'Revize Edilmiş'  # Makale statüsünü revize edilmiş olarak güncelle
+
+                article.save()
+                messages.success(request, "Makale başarıyla revize edilmiştir.")
+                return redirect('makale_durum_sorgulama')  # Makale sorgulama sayfasına yönlendir
+
+            else:
+                messages.error(request, "Sadece PDF formatındaki dosyalar kabul edilir.")
+        else:
+            messages.warning(request, "Lütfen revize edilmiş bir dosya yükleyin.")
+
+    return render(request, 'revize_et.html', {'article': article})

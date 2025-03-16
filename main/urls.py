@@ -21,6 +21,8 @@ path('reviewer/', views.reviewer_page, name='reviewer_page'),
     path('send_message/', views.send_message, name='send_message'),
     # Mesaj gönderildiği zaman yönlendirilmek için bir URL
 path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
+    path('makale/revize_et/<int:article_id>/', views.revize_et, name='revize_et'),
+
 ]
 
 # Media dosyalarını erişilebilir yapmak
