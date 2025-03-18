@@ -32,6 +32,7 @@
                 {% for message in messages %}
                     <p>{{ message }}</p>
                 {% endfor %}
+
             </div>
         {% endif %}
 
@@ -100,7 +101,45 @@
                     </table>
                 </div>
             </div>
-        </div>  <!-- Bu div eksikti, düzeltildi -->
+        </div>
+
+        <div class="card shadow-lg mt-4">
+            <div class="card-body">
+                <h3 class="card-title text-primary">📄 Yüklenmiş Makaleler</h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>Takip No</th>
+                                <th>Başlık</th>
+                                <th>Yazar</th>
+                                <th>Durum</th>
+                                <th>Gönderim Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reviewer in reviewers %}
+                                <tr class="text-center">
+                                    <td>{{ reviewer.reviewer }}</td>
+                                    <td>{{ reviewer.subtopics }}</td>
+                                    <td>{{ reviewer.subtopic.main_topic }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ reviewer.get_status_display }}</span>
+                                    </td>
+                                    <td>{{ reviewer.submission_date }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-info">📄 Detaylar</a>
+                                        <a href="#" class="btn btn-sm btn-success">✔ Onayla</a>
+                                        <a href="#" class="btn btn-sm btn-warning">✏ Revize Et</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- Bu div eksikti, düzeltildi -->
 
         <!-- Gelen Mesajlar Bölümü -->
         <div class="messages-section mt-4">

@@ -120,6 +120,8 @@ def makale_durum_sorgulama(request):
 from django.shortcuts import render
 from django.contrib import messages
 from .models import Article, User, Message
+from collections import defaultdict
+
 
 
 def editor_page(request):
@@ -141,14 +143,30 @@ def editor_page(request):
             email = f'hakem{i}@gmail.com'  # Hakemlerin e-posta formatı
             if not User.objects.filter(username=email).exists():
                 User.objects.create(username=email, user_type='Hakem', email=email)
+        assign_reviewers_to_subtopics()
+
         messages.success(request, "Hakemler başarıyla oluşturuldu.")
     else:
         messages.info(request, "Hakemler zaten oluşturulmuş.")
+    reviewers = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').order_by('reviewer__username')
 
+    grouped_reviewers = defaultdict(list)
+
+    for entry in reviewers:
+        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
+
+    # JSON formatına uygun çıktı
+    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
+                      grouped_reviewers.items()]
+
+    print(grouped_result)
+
+    hakem=ReviewerSubtopic.objects.all()
     # Şablonu render et
     return render(request, 'editor.html', {
         'editor_messages': editor_messages,
-        'articles': articles
+        'articles': articles,
+        "reviewers": grouped_result,
     })
 
 
@@ -381,4 +399,42 @@ def list_editor_messages(request):
     print(editor_messages)
     return render(request, 'editor.html', {'editor_messages': editor_messages})
 
+import random
+from django.contrib.auth import get_user_model
+from .models import Subtopic, ReviewerSubtopic
 
+User = get_user_model()
+
+def assign_reviewers_to_subtopics():
+    subtopics = list(Subtopic.objects.all())
+    reviewers = list(User.objects.filter(user_type='Hakem'))
+
+    if not reviewers:
+        return "Hiç hakem bulunamadı!"
+
+    random.shuffle(reviewers)  # Hakemleri karıştır
+
+    assignments = []
+    for subtopic in subtopics:
+        print(subtopic)
+        assigned_reviewer = random.choice(reviewers)  # Rastgele bir hakem seç
+        assignment, created = ReviewerSubtopic.objects.get_or_create(
+            reviewer=assigned_reviewer,
+            subtopic=subtopic
+        )
+        assignments.append(f"{assigned_reviewer.username} -> {subtopic.name}")
+
+    return assignments  # Atanan hakemleri liste olarak döndür
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
+@csrf_exempt
+def generate_random_reviewers(request):
+    if request.method == "POST":
+        result = assign_reviewers_to_subtopics()
+        return JsonResponse({"message": "Atama işlemi tamamlandı!", "details": result})
+
+    return JsonResponse({"error": "Geçersiz istek"}, status=400)

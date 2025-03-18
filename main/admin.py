@@ -21,3 +21,18 @@ class ArticleAdmin(admin.ModelAdmin):
     search_fields = ('title', 'author__username', 'tracking_number')  # Makale başlığı, yazarın adı ve takip numarası üzerinden arama yapılabilir.
     list_filter = ('status', 'author__user_type')  # Makale durumu ve yazarın kullanıcı tipi üzerinden filtreleme yapılabilir.
 
+from django.contrib import admin
+from .models import Subtopic, ReviewerSubtopic
+
+# Subtopic Modelini Admin Paneline Kaydet
+@admin.register(Subtopic)
+class SubtopicAdmin(admin.ModelAdmin):
+    list_display = ('name', 'main_topic')  # Örnek olarak 'name' ve 'main_topic' alanlarını listele
+    search_fields = ('name',)  # 'name' alanında arama yapılabilir
+
+# ReviewerSubtopic Modelini Admin Paneline Kaydet
+@admin.register(ReviewerSubtopic)
+class ReviewerSubtopicAdmin(admin.ModelAdmin):
+    list_display = ('reviewer', 'subtopic')  # 'reviewer' ve 'subtopic' ilişkilendirilecek
+    search_fields = ('reviewer__username', 'subtopic__name')  # Reviewer'ın ismi ve Subtopic ismi üzerinden arama yapılabilir
+
