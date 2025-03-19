@@ -2,13 +2,10 @@ from django.urls import path
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import yazar_sayfasi
+from .views import yazar_sayfasi, generate_random_reviewers
 from .views import delete_article
-<<<<<<< HEAD
-from .views import generate_random_reviewers
-=======
+
 from .views import pdf_goruntule
->>>>>>> 288d203 (degisiklikleri cekmek)
 
 
 urlpatterns = ([
@@ -16,27 +13,19 @@ urlpatterns = ([
     path('yazar/', yazar_sayfasi, name='yazar_sayfasi'),
     path('makale_yukle/', views.makale_yukle, name='makale_yukle'),  # Yeni URL ekleyin
     path('makale_durum_sorgulama/', views.makale_durum_sorgulama, name='makale_durum_sorgulama'),
-
     path('editor/', views.editor_page, name='editor_page'),
     path('reviewer/', views.reviewer_page, name='reviewer_page'),
-path('reviewer/', views.reviewer_page, name='reviewer_page'),
+    path('reviewer/', views.reviewer_page, name='reviewer_page'),
     path('review/<int:article_id>/', views.review_article, name='degerlendir'),
     path('delete_article/<int:article_id>/', delete_article, name='delete_article'),
- # Diğer URL desenleriniz
     path('send_message/', views.send_message, name='send_message'),
-    # Mesaj gönderildiği zaman yönlendirilmek için bir URL
-path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
+    path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
     path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),  # Makale ID'si ile revize etme sayfasına yönlendir
-<<<<<<< HEAD
-path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
-              ]
-=======
-                   path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
+    path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
+     path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
 
-               ]
->>>>>>> 288d203 (degisiklikleri cekmek)
-
-               + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
+     ]
+   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
 
 # Media dosyalarını erişilebilir yapmak
 if settings.DEBUG:

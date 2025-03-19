@@ -1,40 +1,27 @@
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.conf import settings
+
+from .models import *
 from django.contrib.auth import get_user_model
-from .models import Article, Assignment, Message, Review
-import uuid
-import os
-
-# Kullanıcı modelini doğru şekilde al
-User = get_user_model()
-# Makale yükleme sayfası
-import os
-import uuid
-import fitz  # PyMuPDF kütüphanesi
-from django.shortcuts import render, redirect
+from collections import defaultdict
 from django.contrib import messages
-from django.conf import settings
-from .models import Article, User
-
 import fitz  # PyMuPDF
+import re
+from django.http import Http404
+from django.http import FileResponse
 
-
-
-
-import os
+from .forms import EditorMessageForm
 import random
-import fitz  # PyMuPDF
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from .models import Article, ArticleImage
-
-
-import fitz  # PyMuPDF
+from .models import Subtopic, ReviewerSubtopic
+from django.shortcuts import render, get_object_or_404, redirect
 import os
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+User = get_user_model()
+
+
+User = get_user_model()
+
 
 def pdf_to_text(pdf_path, txt_path, tracking_number):
     """
@@ -182,21 +169,6 @@ def yazar_sayfasi(request):
 
     return render(request, 'makalesistemi.html', {'email': email, 'articles': articles})
 
-from django.shortcuts import render, get_object_or_404
-from django.contrib import messages
-from .models import Article
-
-from django.shortcuts import render
-from django.contrib import messages
-from .models import Article
-
-from django.shortcuts import render
-from .models import Article  # Article modelinizin import edildiğinden emin olun
-from django.contrib import messages
-
-from django.shortcuts import render
-from .models import Article  # Makale modelini içe aktarıyoruz
-from django.contrib import messages
 
 
 def makale_durum_sorgulama(request):
@@ -225,14 +197,6 @@ def makale_durum_sorgulama(request):
         "articles": articles,
         "author_articles": author_articles,
     })
-
-
-# Editör sayfası
-from django.shortcuts import render
-from django.contrib import messages
-from .models import Article, User, Message
-from collections import defaultdict
-
 
 
 def editor_page(request):
@@ -391,25 +355,6 @@ def delete_all_articles(request):
     return render(request, 'editor_page.html')
 
 
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Article
-from .utils import create_pdf_from_text  # PDF oluşturma fonksiyonu
-from .forms import ArticleForm
-from django.contrib import messages
-from django.core.files.base import ContentFile
-from .utils import extract_text_from_pdf
-
-
-from django.http import HttpResponse
-from django.shortcuts import render
-from .models import Article
-from .forms import ArticleForm
-
-
-
-
-import fitz  # PyMuPDF
-import re
 
 
 def extract_text_and_images_from_pdf(pdf_path):
@@ -489,9 +434,6 @@ def revize_et(request, article_id):
             "pdf_content": html_content,  # HTML içeriği gönderiyoruz
         })
 
-from django.shortcuts import render, redirect
-from .models import EditorMessage
-from .forms import EditorMessageForm
 
 # Yazarın editöre mesaj göndermesi için
 def submit_editor_message(request):
@@ -510,11 +452,6 @@ def list_editor_messages(request):
     print(editor_messages)
     return render(request, 'editor.html', {'editor_messages': editor_messages})
 
-import random
-from django.contrib.auth import get_user_model
-from .models import Subtopic, ReviewerSubtopic
-
-User = get_user_model()
 
 def assign_reviewers_to_subtopics():
     subtopics = list(Subtopic.objects.all())
@@ -537,11 +474,6 @@ def assign_reviewers_to_subtopics():
 
     return assignments  # Atanan hakemleri liste olarak döndür
 
-import os
-from django.shortcuts import render, get_object_or_404, redirect
-from django.conf import settings
-from .models import Article
-from django.core.files.base import ContentFile
 
 def revize_et(request, article_id):
     article = get_object_or_404(Article, id=article_id)
@@ -581,23 +513,9 @@ def revize_et(request, article_id):
         })
 
 
-from django.shortcuts import render, get_object_or_404
-from django.http import FileResponse
-import os
-from .models import Article  # Makale modelini içe aktar
 
 
-from django.http import Http404
 
-from django.conf import settings
-from django.http import Http404
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse
-import os
-
-
-import os
-from django.conf import settings
 
 def pdf_goruntule(request, article_id):
     article = get_object_or_404(Article, id=article_id)
@@ -613,8 +531,6 @@ def pdf_goruntule(request, article_id):
     return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 
 @csrf_exempt
