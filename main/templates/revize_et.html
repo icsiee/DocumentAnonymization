@@ -23,53 +23,50 @@
             height: auto;
         }
         .form-group {
-            margin-bottom: 20px;  /* Form elemanlarının arası */
+            margin-bottom: 20px;
         }
         .form-container {
-            margin-top: 30px;  /* Form kısmı için üstten boşluk */
+            margin-top: 30px;
         }
     </style>
 </head>
 
 <body>
     <div class="container mt-4">
-        <!-- Başlık ve form bilgilerini üstte yerleştiriyoruz -->
         <div class="form-container">
             <h2>Makale Revize Et</h2>
 
-            <!-- Revize edilen PDF dosyasını yükleme kısmı -->
+            <!-- Revize edilen PDF dosyasını yükleme ve düzenlenen içeriği gönderme formu -->
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
+
+                <!-- Makale Başlığı, Yazar, Durum ve diğer bilgiler -->
+                <div class="mb-3 mt-4">
+                    <h4>Makale Başlığı: {{ article.title }}</h4>
+                    <p><strong>Yazar:</strong> {{ article.author.username }}</p>
+                    <p><strong>Takip Numarası:</strong> {{ article.tracking_number }}</p>
+                    <p><strong>Mevcut Durum:</strong> {{ article.get_status_display }}</p>
+                </div>
+
                 <div class="form-group">
                     <label for="updated_file">Revize Edilen PDF Dosyasını Yükleyin (Opsiyonel):</label>
                     <input type="file" id="updated_file" name="updated_file" class="form-control">
-                  <!-- Revize et butonu -->
-                <button type="submit" class="btn btn-primary mt-3">Revize Et</button>
                 </div>
-            </form>
-        </div>
+                                <button type="submit" class="btn btn-primary mt-3">Revize Et</button>
 
-        <!-- Makale Başlığı, Yazar, Durum ve diğer bilgiler -->
-        <div class="mb-3 mt-4">
-            <h4>Makale Başlığı: {{ article.title }}</h4>
-            <p><strong>Yazar:</strong> {{ article.author.username }}</p>
-            <p><strong>Takip Numarası:</strong> {{ article.tracking_number }}</p>
-            <p><strong>Mevcut Durum:</strong> {{ article.get_status_display }}</p>
-        </div>
 
-        <!-- Düzenleme yapılacak PDF içeriği -->
-        <div class="form-container">
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
+                <!-- Düzenleme yapılacak PDF içeriği -->
                 <div class="form-group">
                     <label for="pdf_content">Makale İçeriği (Düzenleyin):</label>
-                    <div id="pdf_content" name="pdf_content" class="editor-container" contenteditable="true">
-                        {{ pdf_content|safe }}  <!-- HTML içeriğini güvenli şekilde ekliyoruz -->
+                    <div id="pdf_content" class="editor-container" contenteditable="true">
+                        {{ pdf_content|safe }}
                     </div>
                 </div>
 
+                <!-- Gizli input (Düzenlenen içeriği form ile sunucuya göndermek için) -->
                 <input type="hidden" name="updated_pdf_content" id="updated_pdf_content">
-                <!-- Revize et butonu buraya eklenebilir veya başka bir formda olabilir -->
+
+                <!-- Revize Et Butonu -->
             </form>
         </div>
 
@@ -89,6 +86,7 @@
             document.getElementById('updated_pdf_content').value = document.getElementById('pdf_content').innerHTML;
         });
     </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -120,13 +120,16 @@ def makale_yukle(request):
         # Kullanıcıyı e-posta adresiyle bul veya oluştur
         user, created = User.objects.get_or_create(email=email, defaults={'username': email, 'user_type': 'Yazar', 'is_active': True})
 
+        # Eğer kullanıcı türü Yazar değilse, hata mesajı ver
         if user.user_type != 'Yazar':
             messages.error(request, "Sadece Yazarlar makale yükleyebilir.")
             return redirect('makale_yukle')
 
+        # Yüklenen dosyayı al
         makale = request.FILES.get('makale')
 
         if makale:
+            # Yalnızca PDF dosyalarını kabul et
             if makale.name.endswith('.pdf'):
                 tracking_number = generate_tracking_number()  # 5 haneli eşsiz takip numarası oluştur
 
@@ -465,8 +468,13 @@ def remove_columns(html_content):
     return html_content
 
 
+from django.shortcuts import render
+from .models import Article
 from django.conf import settings
 
+from django.shortcuts import render
+from .models import Article
+from django.shortcuts import render
 from .models import Article
 
 def revize_et(request, article_id):
@@ -528,6 +536,81 @@ def assign_reviewers_to_subtopics():
         assignments.append(f"{assigned_reviewer.username} -> {subtopic.name}")
 
     return assignments  # Atanan hakemleri liste olarak döndür
+
+import os
+from django.shortcuts import render, get_object_or_404, redirect
+from django.conf import settings
+from .models import Article
+from django.core.files.base import ContentFile
+
+def revize_et(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+
+    if request.method == "POST":
+        # Düzenlenen HTML içeriğini al
+        updated_content = request.POST.get("updated_pdf_content", "")
+
+        # Dosya yüklenmiş mi kontrol et
+        updated_file = request.FILES.get("updated_file")
+
+        # Eğer yeni bir PDF yüklenmişse, eski dosyayı silip yenisini kaydet
+        if updated_file:
+            # Eski dosyayı sil (eğer varsa)
+            if article.pdf_file:
+                old_file_path = os.path.join(settings.MEDIA_ROOT, str(article.pdf_file))
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
+
+            # Yeni dosyayı kaydet
+            article.pdf_file.save(updated_file.name, updated_file)
+            article.save()  # Değişiklikleri kaydedin
+
+        # Güncellenen içeriği veritabanına kaydet
+        article.content = updated_content
+        article.status = "Revize Edildi"  # Durumu güncelle
+        article.save()
+
+        return redirect("makale_durum_sorgulama")  # Başarılı işlem sonrası yönlendirme (URL adını değiştir)
+
+    else:
+        # PDF içeriğini çıkar ve düzenleme sayfasına gönder
+        html_content = extract_text_and_images_from_pdf(article.file.path)
+        return render(request, "revize_et.html", {
+            "article": article,
+            "pdf_content": html_content,
+        })
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import FileResponse
+import os
+from .models import Article  # Makale modelini içe aktar
+
+
+from django.http import Http404
+
+from django.conf import settings
+from django.http import Http404
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+import os
+
+
+import os
+from django.conf import settings
+
+def pdf_goruntule(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+
+    if not article.pdf_file:
+        raise Http404("Bu makalenin PDF dosyası mevcut değil.")
+
+    pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', article.pdf_file.name)
+
+    if not os.path.exists(pdf_path):
+        raise Http404("PDF dosyası bulunamadı.")
+
+    return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
 
 
 from django.http import JsonResponse

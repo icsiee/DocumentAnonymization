@@ -76,8 +76,14 @@ class Article(models.Model):
     file = models.FileField(upload_to='articles/', blank=True, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
+<<<<<<< HEAD
     tracking_number = models.CharField(max_length=50, unique=True, blank=True)  # Otomatik oluşturulacak
     content = models.TextField(blank=True, null=True)  # PDF içeriğini saklamak için
+=======
+    tracking_number = models.CharField(max_length=50, unique=True)
+    content = models.TextField(blank=True, null=True)  # PDF içeriği için yeni alan
+    pdf_file = models.FileField(upload_to="articles/")  # PDF dosyasının zorunlu olduğu durum
+>>>>>>> 288d203 (degisiklikleri cekmek)
 
     def __str__(self):
         return self.title

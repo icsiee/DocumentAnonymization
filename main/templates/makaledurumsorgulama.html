@@ -48,21 +48,29 @@
             </form>
         </div>
 
-        <!-- Sonuç Bölümü -->
-        <div class="mt-4">
-            {% if article %}
-                <div class="card shadow-lg p-4">
-                    <h3 class="text-center text-success">Makale Bilgileri</h3>
-                    <table class="table table-bordered mt-3">
-                        <tr><th>📖 Başlık:</th><td>{{ article.title }}</td></tr>
-                        <tr><th>📌 Takip Numarası:</th><td>{{ article.tracking_number }}</td></tr>
-                        <tr><th>✍ Yazar:</th><td>{{ article.author.username }}</td></tr>
-                        <tr><th>📊 Durum:</th><td>{{ article.status }}</td></tr>
-                        <tr><th>📅 Yükleme Tarihi:</th><td>{{ article.submission_date }}</td></tr>
-                    </table>
-                    <!-- Revize Etme Butonu -->
-                    <a href="{% url 'revize_et' article.id %}" class="btn btn-warning w-100 mt-3">🔄 Revize Et</a>
-                </div>
+       <!-- Sonuç Bölümü -->
+<div class="mt-4">
+    {% if article %}
+        <div class="card shadow-lg p-4">
+            <h3 class="text-center text-success">Makale Bilgileri</h3>
+            <table class="table table-bordered mt-3">
+                <tr><th>📖 Başlık:</th><td>{{ article.title }}</td></tr>
+                <tr><th>📌 Takip Numarası:</th><td>{{ article.tracking_number }}</td></tr>
+                <tr><th>✍ Yazar:</th><td>{{ article.author.username }}</td></tr>
+                <tr><th>📊 Durum:</th><td>{{ article.status }}</td></tr>
+                <tr><th>📅 Yükleme Tarihi:</th><td>{{ article.submission_date }}</td></tr>
+            </table>
+
+            <!-- PDF'yi Görüntüleme Butonu -->
+            <div class="mt-3">
+                <a href="{% url 'pdf_goruntule' article.id %}" target="_blank" class="btn btn-secondary">
+                    📄 PDF'yi Görüntüle
+                </a>
+            </div>
+
+            <!-- Revize Etme Butonu -->
+            <a href="{% url 'revize_et' article.id %}" class="btn btn-warning w-100 mt-3">🔄 Revize Et</a>
+        </div>
 
                 {% if author_articles %}
                     <div class="card shadow-lg p-4 mt-4">
@@ -111,6 +119,8 @@
                                     <td>{{ makale.status }}</td>
                                     <td>
                                         <a href="{% url 'revize_et' makale.id %}" class="btn btn-warning btn-sm">🔄 Revize Et</a>
+                                        <a href="{% url 'pdf_goruntule' makale.id %}" target="_blank" class="btn btn-secondary btn-sm">📄 PDF'yi Görüntüle</a>
+
                                     </td>
                                 </tr>
                             {% endfor %}
