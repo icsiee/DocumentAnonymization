@@ -523,7 +523,7 @@ def pdf_goruntule(request, article_id):
     if not article.pdf_file:
         raise Http404("Bu makalenin PDF dosyası mevcut değil.")
 
-    pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', article.pdf_file.name)
+    pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', article.file.name)
 
     if not os.path.exists(pdf_path):
         raise Http404("PDF dosyası bulunamadı.")

@@ -63,9 +63,10 @@
 
             <!-- PDF'yi Görüntüleme Butonu -->
             <div class="mt-3">
-                <a href="{% url 'pdf_goruntule' article.id %}" target="_blank" class="btn btn-secondary">
-                    📄 PDF'yi Görüntüle
-                </a>
+                <a href="/media/articles/{{ article.tracking_number }}.pdf" target="_blank" class="btn btn-secondary">
+    📄 PDF'yi Görüntüle
+</a>
+
             </div>
 
             <!-- Revize Etme Butonu -->
@@ -119,7 +120,10 @@
                                     <td>{{ makale.status }}</td>
                                     <td>
                                         <a href="{% url 'revize_et' makale.id %}" class="btn btn-warning btn-sm">🔄 Revize Et</a>
-                                        <a href="{% url 'pdf_goruntule' makale.id %}" target="_blank" class="btn btn-secondary btn-sm">📄 PDF'yi Görüntüle</a>
+                                  <a href="/media/articles/{{ article.tracking_number }}.pdf" target="_blank" class="btn btn-secondary">
+    📄 PDF'yi Görüntüle
+</a>
+
 
                                     </td>
                                 </tr>
