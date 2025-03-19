@@ -1,87 +1,55 @@
-e for 
-continuous dimension emo tion automatic analysis and machine 
-recognition.  
-Keywords -component ; EEG ; FFT ; CWT ; CNN;  emotion  
-recognition  
-I. INTRODUCTION  
-Emotion recognition is a multidisciplinary research field 
-integrating cognitive science, psychology, computer science , 
-and neuroscie nce. It is a difficult and hot spot in the field of 
-cognitive science. With the enhancement of computer 
-computing power, the cost of implementing machine learning 
-algorithms is greatly reduced, and building a machine learning 
-algorithm model can effectivel y improve the accuracy and 
-robustness of emotion recognition.  At the same time, with the 
-development of non -invasive sensing technology and human -
-computer interaction technology, EEG signals are gradually 
-introduced into the field of emotion recognition re search due to 
-their strong objectivity and high accuracy of classification and 
-recognition.  
-Emotion recognition of EEG signals has achieved good 
-classification results under traditional machine learning 
-classifiers. Reference  [1] used linear kernel least squares 
-support vector machines (LS -SVM) and back propagation  
-artificial neural network (BP -ANN), which are effective the 
-two-category emotion recognition is performed on the valence -
-arousal model and the accuracy rate reaches 61.17% and 
-64.84%.  Reference  [2] extracted EEG signal features from the 
-DEAP data set by combining maximum correlation, minimum 
-redundancy and principal component analysis, and fused high -
-dimensional features, using support vector machines (SVM) for 
-classification, and accurate classif ication in terms of valence 
-and arousal the accuracy were  72.45% and 76.1%.  Reference  [3] 
-used an efficient feature selection method and a kernel -based 
-classifier to classify emotions on the standard EEG data set, and the accuracy of the valence and arousa l on the SVM 
-classifier reached 73.06%, 73.14%.  
-The increase in computer processing speed and computing 
-power provides the possibility for the design and 
-implementation of deep learning networks. Reference  [4] 
-extracted the median, mean, variance, and kurt osis of the EEG 
-signal on the DEAP data set, and used  a convolutional neural 
-network (CNN) as the classifier to achieve valence -valence. 
-Emotion recognition was performed on the degree of emotion 
-model, and the average classification accuracy rates of 81.4 0% 
-and 73.36%.  Reference  [5] divided the EEG signal into 
-multiple time periods on the DEAP data set and extracted its 
-features  and used the Long -Short term memory (LSTM) 
-algorithm for dimensional emotion classification, and the 
-accuracy rates were 73.9% an d 73.5% respectively;  Reference 
+ernel -based
+classifier to classify emotions on the standard EEG data set, and the accuracy of the valence and arousa l on the SVM
+classifier reached 73.06%, 73.14%.
+The increase in computer processing speed and computing
+power provides the possibility for the design and
+implementation of deep learning networks. Reference  [4]
+extracted the median, mean, variance, and kurt osis of the EEG
+signal on the DEAP data set, and used  a convolutional neural
+network (CNN) as the classifier to achieve valence -valence.
+Emotion recognition was performed on the degree of emotion
+model, and the average classification accuracy rates of 81.4 0%
+and 73.36%.  Reference  [5] divided the EEG signal into
+multiple time periods on the DEAP data set and extracted its
+features  and used the Long -Short term memory (LSTM)
+algorithm for dimensional emotion classification, and the
+accuracy rates were 73.9% an d 73.5% respectively;  Reference
 [6] introduced the deep belief networks with glia chains (DBN -
-GC) model to extract high -level abstract features in the time 
-domain, frequency domain, and time -frequency domain of the 
-EEG signal  and used restricted Boltzmann machines (RBM)  to 
-achieve emotion classification  accuracy rates of 81.40% and 
-73.36%.  
-At present, in EEG signal emotion recognition, the accuracy 
-of continuous emotion recognition based on the dimensional 
+GC) model to extract high -level abstract features in the time
+domain, frequency domain, and time -frequency domain of the
+EEG signal  and used restricted Boltzmann machines (RBM)  to
+achieve emotion classification  accuracy rates of 81.40% and
+73.36%.
+At present, in EEG signal emotion recognition, the accuracy
+of continuous emotion recognition based on the dimensional
 emotion model is generally not high, especially fo r the four-
-category emotion recognition research, which cannot meet the 
-application needs, and the individual emotional physiological 
-characteristics vary greatly. The characteristics of physiological 
-signals related to emotions are not sufficient and the differences 
-are not significant. Therefore, in response to these problems, 
-this article uses two types of feature extraction tools on the 
-dimensional emotional data set: fast Fourier transform (FFT) 
-and continuous wavelet transform (CWT), and constructs tw o 
-CNN models for classifying EEG signals. By comparing the 
-experimental results of the two proposed models with other 
-emotion classification task models, the FFT CNN model 
-obtained a better recognition accuracy, which laid a solid 
-foundation for the automa tic emotion analysis and recognition 
-of physiological signals.  
-II. MATERAILS AND METHODS  
-The steps of emotion recognition based on EEG signals 
-generally include: emotion induction, EEG signal collection, 
-signal preprocessing, EEG feature extraction and emotion  
-learning classification.   
-In this paper, the data set is DEAP [7]. The overall design 
+category emotion recognition research, which cannot meet the
+application needs, and the individual emotional physiological
+characteristics vary greatly. The characteristics of physiological
+signals related to emotions are not sufficient and the differences
+are not significant. Therefore, in response to these problems,
+this article uses two types of feature extraction tools on the
+dimensional emotional data set: fast Fourier transform (FFT)
+and continuous wavelet transform (CWT), and constructs tw o
+CNN models for classifying EEG signals. By comparing the
+experimental results of the two proposed models with other
+emotion classification task models, the FFT CNN model
+obtained a better recognition accuracy, which laid a solid
+foundation for the automa tic emotion analysis and recognition
+of physiological signals.
+II. MATERAILS AND METHODS
+The steps of emotion recognition based on EEG signals
+generally include: emotion induction, EEG signal collection,
+signal preprocessing, EEG feature extraction and emotion
+learning classification.
+In this paper, the data set is DEAP [7]. The overall design
 framework is shown in Fig. 1.  First, a band pass filter is used to 2021 International Conference on Electronic Information Engineering and Computer Science (EIECS) | 978-1-6654-1674-0/21/$31.00 ©2021 IEEE | DOI: 10.1109/EIECS53707.2021.9587900
-Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.  
-82 
- preprocess the original EEG signal to filter out high -frequency 
-clutter. Second, a fast Fourier transfo rm (FFT) and continuous 
-wavelet transform (CWT) perform feature extraction on EEG signals . Finally, through neural network learning and training, 
-the classification results are output.  
+Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.
+82
+preprocess the original EEG signal to filter out high -frequency
+clutter. Second, a fast Fourier transfo rm (FFT) and continuous
+wavelet transform (CWT) perform feature extraction on EEG signals . Finally, through neural network learning and training,
+the classification results are output.
 EEG signalPreprocessing
 FFT
 Down
@@ -92,21 +60,20 @@ results
 Classification
 results
 Feature extraction
- 
-Figure 1. Overall design framework  
-A. CNN Model with FFT Feature Extraction  
-First, the raw EEG signal is preprocessed, and feature 
-extraction is performed through the FFT algorithm . Split the 
+Figure 1. Overall design framework
+A. CNN Model with FFT Feature Extraction
+First, the raw EEG signal is preprocessed, and feature
+extraction is performed through the FFT algorithm . Split the
 processed data and labels into a training -test set at a ratio of 80 -
-20, apply one -hot encoding to the labe ls, and use a standard 
-scalar to normalize the data in order to obtain better accuracy.  
-Maximum pooling is implemented for the convolution part, 
-and the rectified linear unit (Relu) activation function is used 
-for the dense layer. Several batch normalizati on and dropout 
-layers were inserted to prevent overfitting. For the final 
-classification layer, use the softmax activation function to 
-output the probability estimate for each class. The convolution 
-part is shown in Fig. 2 (a). 
+20, apply one -hot encoding to the labe ls, and use a standard
+scalar to normalize the data in order to obtain better accuracy.
+Maximum pooling is implemented for the convolution part,
+and the rectified linear unit (Relu) activation function is used
+for the dense layer. Several batch normalizati on and dropout
+layers were inserted to prevent overfitting. For the final
+classification layer, use the softmax activation function to
+output the probability estimate for each class. The convolution
+part is shown in Fig. 2 (a).
 Conv
 Relu
 MaxPoolingConv
@@ -118,7 +85,6 @@ BN
 Flatten
 Dense
 Dropout×3
-                          
 Conv
 Relu
 MaxPoolingConv
@@ -126,172 +92,164 @@ Relu
 MaxPooling
 FlattenInput
 Dense
-Softmax  
-(a)                                                       (b)  
-Figure 2. FFT model  (a); CWT model (b)  
-B. CNN Model with CWT Feature Extraction  
-The CWT model utilizes the CWT algorithm from 
-PyWavelets. This method uses the mother wavelet and the 
-scale list of the inspection signal as the input signal. The 
-mother wavelet is a "Morlet" wavelet.  
-Similar to the FFT model, the CWT model is implemented 
-through One -Hot and other methods of encoding, standard scalar normalization, and k -fold cross -validation. The model 
-architecture is redesigned as shown in Fig. 2(b). In order to 
-better adapt to the DEAP data set and produce better results. 
-The CWT model reduces the num ber of dropout layers and the 
-number of batch nor malization layers to prevent large peaks 
-and fluctuations in the verification loss.  
-III. EXPRIMENTAL RESULTS AND DISCUSSION  
-This experiment was trained and tested on the windows10 
-system and the Nvidia Quadro P50 00 platform. Considering 
-computing resources and computing time, this experiment uses 
-the original EEG data of 3 subjects (subjects 01, 02 and 03).  
-A. DEAP data set and preprocessing  
-The DEAP data set contains 32 channels of EEG signals of 
-32 subjects and 8 c hannels of peripheral physiological signals. 
-This article only uses 32 -channel EEG signals as experimental 
-data: EEG signals are first sampled at 512Hz, then the 
-sampling rate is reduced to 128Hz, and the bandpass frequency 
-filtering of 40 -45.0Hz is used t o remove E OG artifacts, as 
-shown in Fig. 3. Each participant watched 40 emotional music 
-videos, each with a duration of 1 minute. After the subjects 
-watched each video, they scored the degree of arousal, valence 
-preference and dominance, with a score of 1 -9. The evaluation 
-value from small to large indic ates that the various indicators 
-are from negative to positive, from strong to weak.  
-B. Analysis of FFT CNN Model  
-The CNN model with FFT feature extraction was trained 
-with k -fold cross -validation (k=5) over 20 0 epochs, and the 
-model was confirmed to converge . Fig. 4 shows a pair of 
-training and testing accuracy and loss curves of the model 
-during 5 folds. From the results, it can be seen that the FFT 
-model produces good results, and the accuracy value is 
-signif icantly higher than the chance level. This shows that the 
-fast Fourier transform model is also very versatile for invisible 
-data, because the training and testing results are comparable. 
-Among the 4 classes, the performance of the FFT model is 
-quite stable , with like/dislike classes, resulting in the bes t test 
-accuracy result of 81.2%.  
-Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.  
-83 
- 
- 
-Figure 3. raw EEG  signal  (a); Filtered noise signal (b); Pure EEG signal (c)  
- 
-  
-(a)                                                                                                         (b) 
-Figure 4. FFT CNN model accur acy (a); FFT CNN model loss (b)  
- 
-  
-(a)                                                                                                             (b) 
-Figure 5. CWT CNN model accuracy (a); CWT CNN model loss (b)  
-C. Analysis of the CWT CNN Model  
-Similar to F FT CNN model, CNN model with CWT feature 
-extraction has been trained on 200 epoch s. Fig. 5 shows a pair 
-of training and testing accuracy and loss curves of the model. It 
-can be seen that CWT model produces good res ults, with 
-training and testing accuracy h igher t han the opportunity level, 
-and impressive training accuracy and loss. The Like/Dislike class shows the best results, with the test accuracy of 66.5% 
-and the training accuracy of 95.6%.  
-However, it is worth noting that the model shows a high 
-level o f verif ication loss, which indicates that CWT model 
-over-fits the training data. The loss graph confirms this finding. 
-With the increase of epoch, the verification loss is different 
-from the training loss . 
-Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.  
-84 
- D. Compari son between FFT and CWT Models  
-The results of FFT and CWT models are shown in table 1. 
-It can be seen that FFT model outperforms CWT model in 
-every emotion category of  the DEAP data set, with an average 
-test accuracy of 78%, while CWT model has an average test 
-accuracy of 65%. Among the three diffe rent em otions, it is 
-worth noting that FFT and CWT model s have the best results 
-on Like/Dislike class, followed by Arousal and Valence class. 
-This may indicate that compared with other types of emotions 
-(such as a rousal), there is a higher correlation betw een lik es 
-and dislikes and individual EEG signal frequency . 
-TABEL 1. Results from the FFT and CWT Models  
- 
-Classes  Test accuracy  
-FFT Model  CWT Model  
-Arousal  79.4%  63.9%  
-Valence  76.0%  63.0%  
-Like/dislike  81.2%  67.5%  
-E. Compared with other classification me thods  
-The comparison between FFT and CWT models and other 
-recognition models were  completed  and shown in table 2 , all 
-the datasets utilized the DEAP datasets.  Reference  [5] used LSTM recurrent neural network , and accurate classification in 
-terms of valence  and arousal the accuracy were 73.9% and 
-73.5% . Reference [6] used DBN network model , and the 
-accuracy of the val ence and arousal reached 78.2%, 77.1%. 
-Reference [8]  used dual-tree complex wavelet packet transform  
-for three -dimensional emotion recognition and classification, 
-the classification accuracy rates of arousal, valence, and 
-like/dislike are 66.2%, 64.3%, and  70.2%, respectively . This 
-paper proposes two three -dimensional emotion classification 
-models. The classification accuracy of CWT CNN Model in 
-valence, arousal, and like/dislike were  63.9%, 63.0%, and 
-67.5% respectively; and the FFT CNN Model is in valence , 
-arousal, and like/dislike were 79.4%, 76.1%, and 81.2%.  It can 
-be seen from the summary of the results that although the 
-performance of CWT C NN Model is inferior to other 
-recognition models, it is still considerable compared with 
-LSTM model in [8]. On th e other hand, the FFT CNN Model is 
-not inferior to other classification recognition models. It has 
+Softmax
+(a)                                                       (b)
+Figure 2. FFT model  (a); CWT model (b)
+B. CNN Model with CWT Feature Extraction
+The CWT model utilizes the CWT algorithm from
+PyWavelets. This method uses the mother wavelet and the
+scale list of the inspection signal as the input signal. The
+mother wavelet is a "Morlet" wavelet.
+Similar to the FFT model, the CWT model is implemented
+through One -Hot and other methods of encoding, standard scalar normalization, and k -fold cross -validation. The model
+architecture is redesigned as shown in Fig. 2(b). In order to
+better adapt to the DEAP data set and produce better results.
+The CWT model reduces the num ber of dropout layers and the
+number of batch nor malization layers to prevent large peaks
+and fluctuations in the verification loss.
+III. EXPRIMENTAL RESULTS AND DISCUSSION
+This experiment was trained and tested on the windows10
+system and the Nvidia Quadro P50 00 platform. Considering
+computing resources and computing time, this experiment uses
+the original EEG data of 3 subjects (subjects 01, 02 and 03).
+A. DEAP data set and preprocessing
+The DEAP data set contains 32 channels of EEG signals of
+32 subjects and 8 c hannels of peripheral physiological signals.
+This article only uses 32 -channel EEG signals as experimental
+data: EEG signals are first sampled at 512Hz, then the
+sampling rate is reduced to 128Hz, and the bandpass frequency
+filtering of 40 -45.0Hz is used t o remove E OG artifacts, as
+shown in Fig. 3. Each participant watched 40 emotional music
+videos, each with a duration of 1 minute. After the subjects
+watched each video, they scored the degree of arousal, valence
+preference and dominance, with a score of 1 -9. The evaluation
+value from small to large indic ates that the various indicators
+are from negative to positive, from strong to weak.
+B. Analysis of FFT CNN Model
+The CNN model with FFT feature extraction was trained
+with k -fold cross -validation (k=5) over 20 0 epochs, and the
+model was confirmed to converge . Fig. 4 shows a pair of
+training and testing accuracy and loss curves of the model
+during 5 folds. From the results, it can be seen that the FFT
+model produces good results, and the accuracy value is
+signif icantly higher than the chance level. This shows that the
+fast Fourier transform model is also very versatile for invisible
+data, because the training and testing results are comparable.
+Among the 4 classes, the performance of the FFT model is
+quite stable , with like/dislike classes, resulting in the bes t test
+accuracy result of 81.2%.
+Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.
+83
+Figure 3. raw EEG  signal  (a); Filtered noise signal (b); Pure EEG signal (c)
+(a)                                                                                                         (b)
+Figure 4. FFT CNN model accur acy (a); FFT CNN model loss (b)
+(a)                                                                                                             (b)
+Figure 5. CWT CNN model accuracy (a); CWT CNN model loss (b)
+C. Analysis of the CWT CNN Model
+Similar to F FT CNN model, CNN model with CWT feature
+extraction has been trained on 200 epoch s. Fig. 5 shows a pair
+of training and testing accuracy and loss curves of the model. It
+can be seen that CWT model produces good res ults, with
+training and testing accuracy h igher t han the opportunity level,
+and impressive training accuracy and loss. The Like/Dislike class shows the best results, with the test accuracy of 66.5%
+and the training accuracy of 95.6%.
+However, it is worth noting that the model shows a high
+level o f verif ication loss, which indicates that CWT model
+over-fits the training data. The loss graph confirms this finding.
+With the increase of epoch, the verification loss is different
+from the training loss .
+Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.
+84
+D. Compari son between FFT and CWT Models
+The results of FFT and CWT models are shown in table 1.
+It can be seen that FFT model outperforms CWT model in
+every emotion category of  the DEAP data set, with an average
+test accuracy of 78%, while CWT model has an average test
+accuracy of 65%. Among the three diffe rent em otions, it is
+worth noting that FFT and CWT model s have the best results
+on Like/Dislike class, followed by Arousal and Valence class.
+This may indicate that compared with other types of emotions
+(such as a rousal), there is a higher correlation betw een lik es
+and dislikes and individual EEG signal frequency .
+TABEL 1. Results from the FFT and CWT Models
+Classes  Test accuracy
+FFT Model  CWT Model
+Arousal  79.4%  63.9%
+Valence  76.0%  63.0%
+Like/dislike  81.2%  67.5%
+E. Compared with other classification me thods
+The comparison between FFT and CWT models and other
+recognition models were  completed  and shown in table 2 , all
+the datasets utilized the DEAP datasets.  Reference  [5] used LSTM recurrent neural network , and accurate classification in
+terms of valence  and arousal the accuracy were 73.9% and
+73.5% . Reference [6] used DBN network model , and the
+accuracy of the val ence and arousal reached 78.2%, 77.1%.
+Reference [8]  used dual-tree complex wavelet packet transform
+for three -dimensional emotion recognition and classification,
+the classification accuracy rates of arousal, valence, and
+like/dislike are 66.2%, 64.3%, and  70.2%, respectively . This
+paper proposes two three -dimensional emotion classification
+models. The classification accuracy of CWT CNN Model in
+valence, arousal, and like/dislike were  63.9%, 63.0%, and
+67.5% respectively; and the FFT CNN Model is in valence ,
+arousal, and like/dislike were 79.4%, 76.1%, and 81.2%.  It can
+be seen from the summary of the results that although the
+performance of CWT C NN Model is inferior to other
+recognition models, it is still considerable compared with
+LSTM model in [8]. On th e other hand, the FFT CNN Model is
+not inferior to other classification recognition models. It has
 achieved very impressive experimental result s in both the two -
-class and three -class experiments, especially in the category of 
-like/dislike, reaching 81.2%. This shows that the FFT CNN 
-Model is indeed well generalized to EEG data.  
-TABEL 2. Accuracy comparison with other models  
-Classes/models  Arous al Valence  Like/dislike  
-Reference [5] 73.9%  73.5%  - 
-Reference  [6] 78.2%  77.1%  - 
-Reference  [8] 66.2%  64.3%  70.2% 
-CWT CNN Model  63.9%  63.0%  67.5%  
-FFT CNN Model  79.4%  76.1%  81.2%  
-IV. CONCLUSION  
-In this paper, bas ing on the DEAP data set, fast Fourier 
-trans form and continuous wavelet transform are used to extract 
-the features of EEG original signals, and input the ext racted 
-shallow features into the convolutional neural network for 
-learning and training . Emotions are classified and identified in 
-three dimens ions: arousal, valence and likes/dislike. By 
-comparing two different feature extraction algorithms, it is 
-proved that the fast Fourier transform CNN model achieves 
-better classification and recognition effect. Compar ing with 
-other methods, FFT feature extr action algorithm has achieved 
-higher recognition accuracy and is more suitable for emotion 
-classification tasks. This research can be applied to EEG 
+class and three -class experiments, especially in the category of
+like/dislike, reaching 81.2%. This shows that the FFT CNN
+Model is indeed well generalized to EEG data.
+TABEL 2. Accuracy comparison with other models
+Classes/models  Arous al Valence  Like/dislike
+Reference [5] 73.9%  73.5%  -
+Reference  [6] 78.2%  77.1%  -
+Reference  [8] 66.2%  64.3%  70.2%
+CWT CNN Model  63.9%  63.0%  67.5%
+FFT CNN Model  79.4%  76.1%  81.2%
+IV. CONCLUSION
+In this paper, bas ing on the DEAP data set, fast Fourier
+trans form and continuous wavelet transform are used to extract
+the features of EEG original signals, and input the ext racted
+shallow features into the convolutional neural network for
+learning and training . Emotions are classified and identified in
+three dimens ions: arousal, valence and likes/dislike. By
+comparing two different feature extraction algorithms, it is
+proved that the fast Fourier transform CNN model achieves
+better classification and recognition effect. Compar ing with
+other methods, FFT feature extr action algorithm has achieved
+higher recognition accuracy and is more suitable for emotion
+classification tasks. This research can be applied to EEG
 emotion recognition in medical treatment, education, human -
-computer interaction and criminal investigation.  
-ACKNOWLEDGMENT  
-This work was supported by the Science and Technology 
-Department Project of Jilin Province (unde r grants No. 
-20190303080SF ). REFERENCES  
-[1] Kumar N,  Khaund K,  Hazarika S M. (2016) Bispectral Analysis of EEG 
-for Emotion Recognition. Procedia C omputer Science. 84:31 -35. 
-[2] Liu J, Meng H, Li M, Fan Z, Rui Q, Nandi AK. (2018) Emotion 
-detection from EEG reco rdings based on supervised and unsupervised 
-dimension reduction. Concurrency and Computation: Practice and 
-Experience, 30(23):e4446.1 -e4446.13.  
-[3] Atkinson J, Campos D. (2016) Improving BCI -based emotion 
-recognition by combining EEG feature selection and ker nel classifiers. 
-Expert Systems with Applications, 47(Apr.1):35 -41. 
-[4] Tripathi S, Acharya S,  Sharma R D, Mittal S, Bhattacharya S. (2017) 
-Using deep  and convolutional neural networks for accurate emotion 
-classification on DEAP dataset. In Proceedings of the  Thirty -First AAAI 
-Conference on Artificial Intelligence,  AAAI Press, 4746 –4752.  
-[5] Kan W, Li Y, Computer S O. (2019) Emotion recognition from EEG 
-signals by using LSTM recurrent neural networks. Journal of Nanjing 
-University(Natural Science) . 
-[6] Hao C, Yongl i L, Weifang L. (2020) Multi -analysis domain feature 
-fusion of EEG emotion recognition based on integrated deep learning 
-model. Control and Decision,  35(07): 1674 -1680 . 
-[7] Koelstra S .(2012) DEAP: A Database for Em otion Analysis ;Using 
-Physiological Signals. IEEE Transactions on Affective Computing, 2012, 
-3(1):18 -31. 
-[8] Naser D S, Saha G,(2013) Recogmition of emotions induced by Inusic 
-videos using DT -CWPT. in CMIT. Indian, pp. 53 -57. 
- 
+computer interaction and criminal investigation.
+ACKNOWLEDGMENT
+This work was supported by the Science and Technology
+Department Project of Jilin Province (unde r grants No.
+20190303080SF ). REFERENCES
+[1] Kumar N,  Khaund K,  Hazarika S M. (2016) Bispectral Analysis of EEG
+for Emotion Recognition. Procedia C omputer Science. 84:31 -35.
+[2] Liu J, Meng H, Li M, Fan Z, Rui Q, Nandi AK. (2018) Emotion
+detection from EEG reco rdings based on supervised and unsupervised
+dimension reduction. Concurrency and Computation: Practice and
+Experience, 30(23):e4446.1 -e4446.13.
+[3] Atkinson J, Campos D. (2016) Improving BCI -based emotion
+recognition by combining EEG feature selection and ker nel classifiers.
+Expert Systems with Applications, 47(Apr.1):35 -41.
+[4] Tripathi S, Acharya S,  Sharma R D, Mittal S, Bhattacharya S. (2017)
+Using deep  and convolutional neural networks for accurate emotion
+classification on DEAP dataset. In Proceedings of the  Thirty -First AAAI
+Conference on Artificial Intelligence,  AAAI Press, 4746 –4752.
+[5] Kan W, Li Y, Computer S O. (2019) Emotion recognition from EEG
+signals by using LSTM recurrent neural networks. Journal of Nanjing
+University(Natural Science) .
+[6] Hao C, Yongl i L, Weifang L. (2020) Multi -analysis domain feature
+fusion of EEG emotion recognition based on integrated deep learning
+model. Control and Decision,  35(07): 1674 -1680 .
+[7] Koelstra S .(2012) DEAP: A Database for Em otion Analysis ;Using
+Physiological Signals. IEEE Transactions on Affective Computing, 2012,
+3(1):18 -31.
+[8] Naser D S, Saha G,(2013) Recogmition of emotions induced by Inusic
+videos using DT -CWPT. in CMIT. Indian, pp. 53 -57.
 Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:32:27 UTC from IEEE Xplore.  Restrictions apply.

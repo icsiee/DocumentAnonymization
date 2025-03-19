@@ -1,30 +1,4 @@
-019)
-[12] K. Sander et al., “Deap: A Database for Emotion Analysis; Using
-Physiological Signals,” IEEE Trans. Affective Computing, vol. 3, no. 1,
-pp. 18–31, 2011.
-[13] H. Dabas, C. Sethi, C. Dua, M. Dalawat, and D. Sethia, “Emotion
-Classiﬁcation Using EEG Signals,” in Proc. ACM Int. Conf. Computer
-Science and Artiﬁcial Intelligence. ACM, 2018, pp. 380–384.
-[14] J. Liu, H. Meng, A. Nandi, and M. Li, “Emotion detection from
-EEG recordings,” in Proc. IEEE Int. Conf. Natural Computation, Fuzzy
-Systems and Knowledge Discovery. IEEE, 2016, pp. 1722–1727.
-[15] I. Wichakam and P. Vateekul, “An evaluation of feature extraction in
-EEG-based emotion prediction with support vector machines,” in Proc.
-IEEE Int. Conf. Joint conference on computer science and software
-engineering. IEEE, 2014, pp. 106–110.[16] E. S. Salama, R. A.El-Khoribi, M. E.Shoman, and M. A. Shalaby, “Eeg-
-Based Emotion Recognition using 3D Convolutional Neural Networks,”
-Int. Journal of Advanced Computer Science and Applications, vol. 9,
-no. 8, 2018.
-[17] X. Xing, Z. Li, T. Xu, L. Shu, B. Hu, and X. Xu, “SAE+LSTM: A
-New Framework for Emotion Recognition From Multi-Channel EEG,”
-Frontiers in Neurorobotics, vol. 13, p. 37, 2019.
-[18] Y . Yang, Q. Wu, M. Qiu, Y . Wang, and X. Chen, “Emotion Recognition
-from Multi-Channel EEG through Parallel Convolutional Recurrent
-Neural Network,” Proc. IEEE Int. Conf. Joint Conference on Neural
-Networks, 2018.
-[19] B. Wu, W. Chen, Y . Fan, Y . Zhang, J. Hou, J. Huang, and T. Zhang, “Ten-
-cent ML-Images: A Large-Scale Multi-Label Image Database for Visual
-Representation Learning,” arXiv preprint arXiv:1901.01703, 2019.
+ing,” arXiv preprint arXiv:1901.01703, 2019.
 2020 16th IEEE International Colloquium on Signal Processing &amp; its Applications (CSPA 2020), 28-29 Feb. 2020, Langkawi, Malaysia
 92
 Authorized licensed use limited to: ULAKBIM UASL - KOCAELI UNIVERSITESI. Downloaded on March 02,2025 at 12:35:37 UTC from IEEE Xplore.  Restrictions apply.

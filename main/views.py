@@ -413,27 +413,6 @@ def remove_columns(html_content):
     return html_content
 
 
-from django.shortcuts import render
-from .models import Article
-from django.conf import settings
-
-from django.shortcuts import render
-from .models import Article
-from django.shortcuts import render
-from .models import Article
-
-def revize_et(request, article_id):
-    article = Article.objects.get(id=article_id)
-    if request.method == "GET":
-        # PDF içeriğini çekiyoruz
-        html_content = extract_text_and_images_from_pdf(article.file.path)
-
-        # HTML içeriği template'e gönderiyoruz
-        return render(request, "revize_et.html", {
-            "article": article,
-            "pdf_content": html_content,  # HTML içeriği gönderiyoruz
-        })
-
 
 # Yazarın editöre mesaj göndermesi için
 def submit_editor_message(request):
@@ -476,11 +455,6 @@ def assign_reviewers_to_subtopics():
 
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.conf import settings
-import os
-from .models import Article
-from .utils import extract_text_and_images_from_pdf  # PDF içeriği çıkaran yardımcı fonksiyon
 
 import os
 from django.conf import settings
@@ -558,6 +532,22 @@ def revize_et(request, article_id):
 
 
 
+from django.http import FileResponse, Http404
+from django.conf import settings
+import os
+
+# belge_anonimlestirme/views.py dosyasına ekleme yapın
+
+from django.http import FileResponse, Http404
+from django.conf import settings
+import os
+from .models import Article
+
+from django.http import Http404, FileResponse
+import os
+from django.conf import settings
+from .models import Article
+
 def pdf_goruntule(request, article_id):
     article = get_object_or_404(Article, id=article_id)
 
@@ -570,9 +560,6 @@ def pdf_goruntule(request, article_id):
         raise Http404("PDF dosyası bulunamadı.")
 
     return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
-
-
-
 
 @csrf_exempt
 def generate_random_reviewers(request):
