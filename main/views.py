@@ -10,10 +10,104 @@ import os
 # Kullanıcı modelini doğru şekilde al
 User = get_user_model()
 # Makale yükleme sayfası
+import os
+import uuid
+import fitz  # PyMuPDF kütüphanesi
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.conf import settings
+from .models import Article, User
+
+import fitz  # PyMuPDF
+
+
+
+
+import os
+import random
+import fitz  # PyMuPDF
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from .models import Article, ArticleImage
+
+
+import fitz  # PyMuPDF
+import os
+
+def pdf_to_text(pdf_path, txt_path, tracking_number):
+    """
+    PDF içeriğini çıkararak bir TXT dosyasına kaydeder. Ayrıca PDF'deki resimleri tanıyıp
+    her bir resme benzersiz bir isim verir ve bu isimleri metne ekler.
+    """
+    doc = fitz.open(pdf_path)
+    text_content = ""
+    image_counter = 1  # Resim sırası
+    image_references = []  # Resim referansları (metne eklenecek)
+
+    for page_number, page in enumerate(doc, 1):  # Sayfa numarasını baştan 1'den başlatarak döngüye al
+        # Sayfanın metnini al
+        page_text = page.get_text("text")
+
+        # Sayfadaki resimleri tespit et
+        images = page.get_images(full=True)
+        image_positions = []  # Resimlerin bulunduğu metin pozisyonları
+
+        for img_index, img in enumerate(images, 1):
+            xref = img[0]  # Resmin XREF numarası
+            base_image = doc.extract_image(xref)
+            image_filename = f"{tracking_number}_page{page_number}_img{image_counter}.png"
+
+            # Resim dosyasını kaydet
+            image_path = os.path.join(settings.MEDIA_ROOT, 'images', image_filename)
+            with open(image_path, "wb") as img_file:
+                img_file.write(base_image["image"])
+
+            # Resmin yerini metne ekle
+            image_position = f"![Resim {image_counter}]({image_filename})"
+            image_positions.append(image_position)
+
+            # Resim numarasını artır
+            image_counter += 1
+
+        # Resimleri, metnin ilgili yerlerine yerleştir
+        for position in image_positions:
+            # Sayfadaki metni her bir resmin yerinde uygun şekilde güncelle
+            page_text = page_text.replace("{{resim}}", position, 1)
+
+        # Sayfanın metnini genel metne ekle
+        text_content += page_text + "\n"
+
+    # TXT dosyasına yaz
+    with open(txt_path, "w", encoding="utf-8") as txt_file:
+        txt_file.write(text_content)
+
+    return text_content  # Metni döndürerek modelde saklamaya yardımcı olur
+
+
+User = get_user_model()
+
+def generate_tracking_number():
+    """
+    5 basamaklı benzersiz bir takip numarası oluşturur.
+    """
+    while True:
+        tracking_number = str(random.randint(10000, 99999))
+        if not Article.objects.filter(tracking_number=tracking_number).exists():
+            return tracking_number
+
 def makale_yukle(request):
+    """
+    Kullanıcının makale yükleme işlemini gerçekleştirir.
+    - PDF dosyasını yalnızca yazarlar yükleyebilir.
+    - PDF'yi takip numarasıyla articles/ klasörüne kaydeder.
+    - PDF içeriğini çıkarıp takip numarasıyla text/ klasörüne kaydeder.
+    - Takip numarasını veritabanına kaydeder.
+    """
     if request.method == 'POST':
-        email = request.POST.get('email')  # Kullanıcının e-posta adresini al
-        title = request.POST.get('title')  # Kullanıcının makale başlığını al
+        email = request.POST.get('email')
+        title = request.POST.get('title')
 
         if not email:
             messages.error(request, "Lütfen geçerli bir e-posta adresi girin.")
@@ -26,36 +120,50 @@ def makale_yukle(request):
         # Kullanıcıyı e-posta adresiyle bul veya oluştur
         user, created = User.objects.get_or_create(email=email, defaults={'username': email, 'user_type': 'Yazar', 'is_active': True})
 
-        # Eğer kullanıcı türü Yazar değilse, hata mesajı ver
         if user.user_type != 'Yazar':
             messages.error(request, "Sadece Yazarlar makale yükleyebilir.")
             return redirect('makale_yukle')
 
-        # Yüklenen dosyayı al
         makale = request.FILES.get('makale')
 
         if makale:
-            # Yalnızca PDF dosyalarını kabul et
             if makale.name.endswith('.pdf'):
-                tracking_number = str(uuid.uuid4())[:10]  # Takip numarası oluştur
+                tracking_number = generate_tracking_number()  # 5 haneli eşsiz takip numarası oluştur
 
-                # Makale oluştur
+                # Dosya yollarını belirleme
+                pdf_filename = f"{tracking_number}.pdf"
+                txt_filename = f"{tracking_number}.txt"
+
+                pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', pdf_filename)
+                txt_path = os.path.join(settings.MEDIA_ROOT, 'text', txt_filename)
+
+                # PDF dosyasını kaydet
+                with open(pdf_path, 'wb') as destination:
+                    for chunk in makale.chunks():
+                        destination.write(chunk)
+
+                # PDF içeriğini çıkar ve resimleri kaydet
+                extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
+
+                # Makaleyi veritabanına kaydet
                 Article.objects.create(
-                    title=title,  # Kullanıcı tarafından girilen başlık
+                    title=title,
                     author=user,
-                    file=makale,
-                    tracking_number=tracking_number
+                    file=f"articles/{pdf_filename}",
+                    tracking_number=tracking_number,
+                    content=extracted_text
                 )
 
                 messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
-                return redirect('yazar_sayfasi')  # Yazar sayfasına yönlendir
+                return redirect('yazar_sayfasi')
 
             else:
-                messages.error(request, "Yalnızca PDF formatında makale yüklenebilir!")
+                messages.error(request, "Yalnızca PDF formatında makale yükleyebilirsiniz!")
         else:
             messages.warning(request, "Lütfen bir makale dosyası seçin.")
 
     return render(request, 'makalesistemi.html')
+
 
 # Yazar sayfası
 def yazar_sayfasi(request):
@@ -357,13 +465,8 @@ def remove_columns(html_content):
     return html_content
 
 
-from django.shortcuts import render
-from .models import Article
 from django.conf import settings
 
-from django.shortcuts import render
-from .models import Article
-from django.shortcuts import render
 from .models import Article
 
 def revize_et(request, article_id):

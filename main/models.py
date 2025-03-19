@@ -49,6 +49,17 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+import os
+import random
+import fitz  # PyMuPDF
+from django.db import models
+from django.conf import settings
+
+import os
+import random
+import fitz  # PyMuPDF
+from django.db import models
+from django.conf import settings
 
 class Article(models.Model):
     STATUS_CHOICES = [
@@ -59,17 +70,76 @@ class Article(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-
     title = models.CharField(max_length=255)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Yazar'})
-    file = models.FileField(upload_to='articles/')  # PDF dosyasını yüklemek için alan
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               limit_choices_to={'user_type': 'Yazar'})
+    file = models.FileField(upload_to='articles/', blank=True, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
-    tracking_number = models.CharField(max_length=50, unique=True)
-    content = models.TextField(blank=True, null=True)  # PDF içeriği için yeni alan
+    tracking_number = models.CharField(max_length=50, unique=True, blank=True)  # Otomatik oluşturulacak
+    content = models.TextField(blank=True, null=True)  # PDF içeriğini saklamak için
 
     def __str__(self):
         return self.title
+
+    def generate_tracking_number(self):
+        """5 basamaklı benzersiz bir takip numarası oluşturur."""
+        while True:
+            tracking_number = str(random.randint(10000, 99999))
+            if not Article.objects.filter(tracking_number=tracking_number).exists():
+                return tracking_number
+
+    def extract_pdf_text_and_images(self, file_path):
+        """PDF içeriğini ve resimleri çıkarır."""
+        doc = fitz.open(file_path)
+        text_content = ""
+        image_list = []
+
+        for i, page in enumerate(doc):
+            text_content += page.get_text("text") + "\n"
+
+            # Sayfadaki resimleri işle
+            for img_index, img in enumerate(page.get_images(full=True)):
+                xref = img[0]  # Image xref
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+
+                # Dosya yolu oluştur
+                image_filename = f"{self.tracking_number}_page{i+1}_img{img_index+1}.png"
+                image_path = os.path.join(settings.MEDIA_ROOT, "images", image_filename)
+
+                # Resmi kaydet
+                with open(image_path, "wb") as img_file:
+                    img_file.write(image_bytes)
+
+                # Image modeline kaydet
+                ArticleImage.objects.create(article=self, image=f"images/{image_filename}")
+
+                image_list.append(image_filename)
+
+        return text_content, image_list
+
+    def save(self, *args, **kwargs):
+        """Otomatik olarak takip numarası oluşturur, PDF içeriğini ve resimleri çıkarır."""
+        if not self.tracking_number:
+            self.tracking_number = self.generate_tracking_number()
+
+        super().save(*args, **kwargs)  # Önce kaydet ki dosya yolu oluşsun
+
+        if self.file:
+            file_path = self.file.path
+            text_content, images = self.extract_pdf_text_and_images(file_path)
+            self.content = text_content
+            super().save(update_fields=['content'])  # Tekrar kaydet (sadece content değişecek)
+
+
+class ArticleImage(models.Model):
+    """Makale içindeki resimleri saklamak için model"""
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to='images/')
+
+    def __str__(self):
+        return f"{self.article.title} - {self.image.name}"
 
 
 # Değerlendirmeler Modeli
