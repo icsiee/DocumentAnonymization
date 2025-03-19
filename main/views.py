@@ -475,42 +475,83 @@ def assign_reviewers_to_subtopics():
     return assignments  # Atanan hakemleri liste olarak döndür
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.conf import settings
+import os
+from .models import Article
+from .utils import extract_text_and_images_from_pdf  # PDF içeriği çıkaran yardımcı fonksiyon
+
+import os
+from django.conf import settings
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+from .models import Article
+from .utils import extract_text_and_images_from_pdf, generate_pdf_with_images_and_text
+
 def revize_et(request, article_id):
+    # Makaleyi al
     article = get_object_or_404(Article, id=article_id)
 
     if request.method == "POST":
         # Düzenlenen HTML içeriğini al
-        updated_content = request.POST.get("updated_pdf_content", "")
+        updated_content = request.POST.get("updated_pdf_content", "").strip()
 
         # Dosya yüklenmiş mi kontrol et
         updated_file = request.FILES.get("updated_file")
 
-        # Eğer yeni bir PDF yüklenmişse, eski dosyayı silip yenisini kaydet
+        # Eğer yeni bir PDF dosyası yüklenmişse
         if updated_file:
-            # Eski dosyayı sil (eğer varsa)
+            # Eski PDF dosyasını sil
             if article.pdf_file:
-                old_file_path = os.path.join(settings.MEDIA_ROOT, str(article.pdf_file))
+                old_file_path = os.path.join(settings.MEDIA_ROOT, "articles", str(article.pdf_file))
                 if os.path.exists(old_file_path):
                     os.remove(old_file_path)
 
-            # Yeni dosyayı kaydet
+            # Yeni PDF dosyasını kaydet
             article.pdf_file.save(updated_file.name, updated_file)
-            article.save()  # Değişiklikleri kaydedin
 
-        # Güncellenen içeriği veritabanına kaydet
+        # Makale içeriğini ve durumu güncelle
         article.content = updated_content
-        article.status = "Revize Edildi"  # Durumu güncelle
+        article.status = "Revize Edildi"  # Durum güncelle
         article.save()
 
-        return redirect("makale_durum_sorgulama")  # Başarılı işlem sonrası yönlendirme (URL adını değiştir)
+        # İçeriği metin dosyasına kaydet (media/text/{tracking_number}.txt)
+        txt_path = os.path.join(settings.MEDIA_ROOT, "text", f"{article.tracking_number}.txt")
+        with open(txt_path, "w", encoding="utf-8") as file:
+            file.write(updated_content)
+
+        # Resimleri media/images klasöründen al
+        images = []
+        for i in range(1, 100):  # Sayfa ve resim numarasını sınırsız kabul edebiliriz
+            img_path = os.path.join(settings.MEDIA_ROOT, "images", f"{article.tracking_number}_page{i}_img1.png")
+            if os.path.exists(img_path):
+                images.append(img_path)
+            else:
+                break  # Resim yoksa döngüyü sonlandır
+
+        # Yeni PDF'i oluştur
+        new_pdf_path = os.path.join(settings.MEDIA_ROOT, "articles", f"{article.tracking_number}.pdf")
+        generate_pdf_with_images_and_text(updated_content, images, new_pdf_path)
+
+        # Yeni PDF'i veritabanına kaydet
+        article.file.name = f"articles/{article.tracking_number}.pdf"
+        article.save()
+
+        # Kullanıcıya başarı mesajı göster
+        messages.success(request, "Makale başarıyla revize edildi!")
+
+        # Başarıyla tamamlandıktan sonra başka bir sayfaya yönlendirin
+        return redirect("makale_durum_sorgulama")
 
     else:
-        # PDF içeriğini çıkar ve düzenleme sayfasına gönder
+        # Eğer GET isteği ise PDF içeriğini al ve düzenleme sayfasına gönder
         html_content = extract_text_and_images_from_pdf(article.file.path)
         return render(request, "revize_et.html", {
             "article": article,
-            "pdf_content": html_content,
+            "pdf_content": html_content,  # PDF içeriğini şablona gönder
         })
+
 
 
 
@@ -540,3 +581,33 @@ def generate_random_reviewers(request):
         return JsonResponse({"message": "Atama işlemi tamamlandı!", "details": result})
 
     return JsonResponse({"error": "Geçersiz istek"}, status=400)
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from PIL import Image
+import os
+
+def generate_pdf_with_images_and_text(text, images, output_path):
+    # PDF dosyasını oluştur
+    c = canvas.Canvas(output_path, pagesize=letter)
+    width, height = letter
+
+    # Metni PDF'ye ekle
+    c.setFont("Helvetica", 12)
+    text_object = c.beginText(40, height - 40)
+    text_object.textLines(text)
+    c.drawText(text_object)
+
+    # Resimleri PDF'ye ekle
+    y_position = height - 100  # Başlangıç pozisyonu
+    for img_path in images:
+        img = Image.open(img_path)
+        img_width, img_height = img.size
+        aspect_ratio = img_height / float(img_width)
+        img_width = 400  # Görselin genişliğini ayarla
+        img_height = aspect_ratio * img_width
+        c.drawImage(img_path, 40, y_position, width=img_width, height=img_height)
+        y_position -= img_height + 20  # Bir sonraki resmin y pozisyonunu ayarla
+
+    # PDF'i kaydet
+    c.save()

@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='article',
-            name='pdf_file',
+            name='file',
             field=models.FileField(blank=True, null=True, upload_to='makaleler/'),
         ),
     ]
