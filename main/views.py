@@ -1,46 +1,25 @@
 
 from .models import *
-from django.contrib.auth import get_user_model
 from collections import defaultdict
-from django.contrib import messages
-import fitz  # PyMuPDF
 import re
-
-from .forms import EditorMessageForm
+from .forms import *
 import random
 from django.contrib.auth import get_user_model
-from .models import Subtopic, ReviewerSubtopic
-from django.shortcuts import render, get_object_or_404, redirect
-import os
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from .utils import *
 
 User = get_user_model()
-
-
-User = get_user_model()
-
 
 import fitz  # PyMuPDF
-import os
-from django.conf import settings  # Django ayarlarını kullanmak için
-
 import spacy
 
 
-# spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
-import os
-from django.conf import settings
-from main.models import Article
 
-# Konu eşleştirme listesi (Veritabanından çekmek yerine burada sabit)
-import os
 import torch
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
-from django.conf import settings
-from main.models import Article
 
 # 🔹 Önceden tanımlanmış konu ve alt konular
 TOPIC_MAP = [
@@ -106,8 +85,6 @@ def determine_article_topic_bert(article):
     print(f"Eşleşme bulundu: {article.subtopic} -> {article.topic}")
 
 
-from .models import User, Article
-from .utils import generate_tracking_number, pdf_to_text
 def makale_yukle(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -348,34 +325,64 @@ def send_message(request):
     return render(request, 'send_message.html')
 
 # Tüm makaleleri silme
+import os
+import shutil
+from django.conf import settings
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from .models import Article
+
+import os
+import shutil
+from django.conf import settings
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from .models import Article
+
+
 def delete_all_articles(request):
     if request.method == "POST":
-        # Veritabanındaki tüm makaleleri al
+        # 1️⃣ Tüm makaleleri veritabanından al
         articles = Article.objects.all()
 
         for article in articles:
-            # Dosya yolunu bul
-            article_file_path = os.path.join(settings.MEDIA_ROOT, 'articles', article.file.name)
+            # 2️⃣ Makale dosyasını sil
+            if article.file:
+                article_file_path = os.path.join(settings.MEDIA_ROOT, article.file.name)
 
-            # Dosyanın var olup olmadığını kontrol et ve sil
-            if os.path.exists(article_file_path):
-                try:
-                    os.remove(article_file_path)
-                    messages.success(request, f"{article_file_path} başarıyla silindi.")
-                except Exception as e:
-                    messages.error(request, f"Dosya silinirken hata oluştu: {str(e)}")
-                    continue
-            else:
-                messages.warning(request, f"Dosya bulunamadı: {article_file_path}")
+                if os.path.exists(article_file_path):
+                    try:
+                        os.remove(article_file_path)
+                        messages.success(request, f"{article_file_path} başarıyla silindi.")
+                    except Exception as e:
+                        messages.error(request, f"Dosya silinirken hata oluştu: {str(e)}")
 
-            # Makaleyi veritabanından sil
+            # 3️⃣ Makaleyi veritabanından sil
             article.delete()
 
-        messages.success(request, "Tüm makaleler ve dosyalar başarıyla silindi.")
+        # 4️⃣ Belirtilen klasörleri temizle
+        folders_to_clear = ['images', 'articles', 'text']  # Sadece klasör isimleri
+        for folder in folders_to_clear:
+            folder_path = os.path.join(settings.MEDIA_ROOT, folder)  # Tam yol oluştur
+
+            if os.path.exists(folder_path):  # Klasör varsa işlemi yap
+                try:
+                    # Tüm içeriği sil, ama klasörü değil
+                    for filename in os.listdir(folder_path):
+                        file_path = os.path.join(folder_path, filename)
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)  # Dosya veya sembolik link sil
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)  # Alt klasörü tamamen sil
+
+                    messages.success(request, f"{folder} klasörü başarıyla temizlendi.")
+                except Exception as e:
+                    messages.error(request, f"{folder} klasörü temizlenirken hata oluştu: {str(e)}")
+
+        messages.success(request, "Tüm makaleler ve medya dosyaları başarıyla silindi.")
         return redirect('editor_page')  # Editör sayfasına yönlendir
+
     return render(request, 'editor_page.html')
-
-
 
 
 def extract_text_and_images_from_pdf(pdf_path):
@@ -475,14 +482,8 @@ def assign_reviewers_to_subtopics():
     return assignments  # Atanan hakemleri liste olarak döndür
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-
-import os
-from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
-from .models import Article
-from .utils import extract_text_and_images_from_pdf, generate_pdf_with_images_and_text
 
 def revize_et(request, article_id):
     # Makaleyi al
