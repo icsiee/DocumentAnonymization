@@ -1,8 +1,79 @@
+from collections import Counter
+from random import random
+
 import fitz  # PyMuPDF
+from django.shortcuts import render
+from pyexpat.errors import messages
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from io import BytesIO
+
+from main.models import Article
+from main.views import nlp
+
+
+def pdf_to_text(pdf_path, txt_path, tracking_number):
+    """
+    PDF içeriğini çıkararak bir TXT dosyasına kaydeder. Ayrıca PDF'deki resimleri tanıyıp
+    her bir resme benzersiz bir isim verir ve bu isimleri metne ekler.
+    """
+    # PDF dosyasını aç
+    doc = fitz.open(pdf_path)
+    text_content = ""
+    image_counter = 1  # Resim sırası
+    image_references = []  # Resim referansları (metne eklenecek)
+
+    # PDF'deki her sayfa üzerinde döngü
+    for page_number, page in enumerate(doc, 1):  # Sayfa numarasını baştan 1'den başlatarak döngüye al
+        # Sayfanın metnini al
+        page_text = page.get_text("text")
+
+        # Sayfadaki resimleri tespit et
+        images = page.get_images(full=True)
+        image_positions = []  # Resimlerin bulunduğu metin pozisyonları
+
+        for img_index, img in enumerate(images, 1):
+            xref = img[0]  # Resmin XREF numarası
+            base_image = doc.extract_image(xref)
+            image_filename = f"{tracking_number}_page{page_number}_img{image_counter}.png"
+
+            # Resim dosyasını kaydet
+            image_path = os.path.join(settings.MEDIA_ROOT, 'images', image_filename)
+            with open(image_path, "wb") as img_file:
+                img_file.write(base_image["image"])
+
+            # Resmin yerini metne ekle
+            image_position = f"![Resim {image_counter}]({image_filename})"
+            image_positions.append(image_position)
+
+            # Resim numarasını artır
+            image_counter += 1
+
+        # Resimleri, metnin ilgili yerlerine yerleştir
+        for position in image_positions:
+            # Sayfadaki metni her bir resmin yerinde uygun şekilde güncelle
+            page_text = page_text.replace("{{resim}}", position, 1)
+
+        # Sayfanın metnini genel metne ekle
+        text_content += page_text + "\n"
+
+    # TXT dosyasına yaz
+    with open(txt_path, "w", encoding="utf-8") as txt_file:
+        txt_file.write(text_content)
+
+    return text_content  # Metni döndürerek modelde saklamaya yardımcı olur
+
+import random  # random modülünü içe aktarın
+
+def generate_tracking_number():
+    """
+    5 basamaklı benzersiz bir takip numarası oluşturur.
+    """
+    while True:
+        tracking_number = str(random.randint(10000, 99999))
+        if not Article.objects.filter(tracking_number=tracking_number).exists():
+            return tracking_number
 
 
 def create_pdf_from_text(text, output_path):
@@ -109,3 +180,20 @@ def generate_pdf_with_images_and_text(text, images, output_path):
 
     # PDF'i kaydet
     c.save()
+
+
+import spacy
+from collections import Counter
+
+# spaCy dil modeli yükleniyor
+nlp = spacy.load("en_core_web_sm")
+
+
+
+
+import fitz  # PyMuPDF kütüphanesi
+
+import os
+from django.conf import settings
+from collections import Counter
+from .models import Article, MainSubtopic

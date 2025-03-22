@@ -78,6 +78,8 @@ class Article(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
     tracking_number = models.CharField(max_length=50, unique=True, blank=True)  # Otomatik oluşturulacak
     content = models.TextField(blank=True, null=True)  # PDF içeriğini saklamak için
+    topic = models.CharField(max_length=255, blank=True, null=True)  # Makale konusu
+    subtopic = models.CharField(max_length=255, blank=True, null=True)  # Makale alt başlığı
 
     def __str__(self):
         return self.title
@@ -131,6 +133,14 @@ class Article(models.Model):
             text_content, images = self.extract_pdf_text_and_images(file_path)
             self.content = text_content
             super().save(update_fields=['content'])  # Tekrar kaydet (sadece content değişecek)
+
+class MainSubtopic(models.Model):
+    main_topic = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.main_topic} - {self.name}"
+
 
 
 class ArticleImage(models.Model):

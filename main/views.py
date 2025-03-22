@@ -5,8 +5,6 @@ from collections import defaultdict
 from django.contrib import messages
 import fitz  # PyMuPDF
 import re
-from django.http import Http404
-from django.http import FileResponse
 
 from .forms import EditorMessageForm
 import random
@@ -23,75 +21,94 @@ User = get_user_model()
 User = get_user_model()
 
 
-def pdf_to_text(pdf_path, txt_path, tracking_number):
-    """
-    PDF içeriğini çıkararak bir TXT dosyasına kaydeder. Ayrıca PDF'deki resimleri tanıyıp
-    her bir resme benzersiz bir isim verir ve bu isimleri metne ekler.
-    """
-    doc = fitz.open(pdf_path)
-    text_content = ""
-    image_counter = 1  # Resim sırası
-    image_references = []  # Resim referansları (metne eklenecek)
+import fitz  # PyMuPDF
+import os
+from django.conf import settings  # Django ayarlarını kullanmak için
 
-    for page_number, page in enumerate(doc, 1):  # Sayfa numarasını baştan 1'den başlatarak döngüye al
-        # Sayfanın metnini al
-        page_text = page.get_text("text")
-
-        # Sayfadaki resimleri tespit et
-        images = page.get_images(full=True)
-        image_positions = []  # Resimlerin bulunduğu metin pozisyonları
-
-        for img_index, img in enumerate(images, 1):
-            xref = img[0]  # Resmin XREF numarası
-            base_image = doc.extract_image(xref)
-            image_filename = f"{tracking_number}_page{page_number}_img{image_counter}.png"
-
-            # Resim dosyasını kaydet
-            image_path = os.path.join(settings.MEDIA_ROOT, 'images', image_filename)
-            with open(image_path, "wb") as img_file:
-                img_file.write(base_image["image"])
-
-            # Resmin yerini metne ekle
-            image_position = f"![Resim {image_counter}]({image_filename})"
-            image_positions.append(image_position)
-
-            # Resim numarasını artır
-            image_counter += 1
-
-        # Resimleri, metnin ilgili yerlerine yerleştir
-        for position in image_positions:
-            # Sayfadaki metni her bir resmin yerinde uygun şekilde güncelle
-            page_text = page_text.replace("{{resim}}", position, 1)
-
-        # Sayfanın metnini genel metne ekle
-        text_content += page_text + "\n"
-
-    # TXT dosyasına yaz
-    with open(txt_path, "w", encoding="utf-8") as txt_file:
-        txt_file.write(text_content)
-
-    return text_content  # Metni döndürerek modelde saklamaya yardımcı olur
+import spacy
 
 
-User = get_user_model()
+# spaCy dil modeli yükleniyor
+nlp = spacy.load("en_core_web_sm")
+import os
+from django.conf import settings
+from main.models import Article
 
-def generate_tracking_number():
-    """
-    5 basamaklı benzersiz bir takip numarası oluşturur.
-    """
-    while True:
-        tracking_number = str(random.randint(10000, 99999))
-        if not Article.objects.filter(tracking_number=tracking_number).exists():
-            return tracking_number
+# Konu eşleştirme listesi (Veritabanından çekmek yerine burada sabit)
+import os
+import torch
+from transformers import BertTokenizer, BertModel
+from sklearn.metrics.pairwise import cosine_similarity
+from django.conf import settings
+from main.models import Article
 
+# 🔹 Önceden tanımlanmış konu ve alt konular
+TOPIC_MAP = [
+    ("Deep Learning", "Artificial Intelligence and Machine Learning"),
+    ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
+    ("Computer Vision", "Artificial Intelligence and Machine Learning"),
+    ("Generative Artificial Intelligence", "Artificial Intelligence and Machine Learning"),
+    ("Data Mining", "Big Data and Data Analytics"),
+    ("Data Visualization", "Big Data and Data Analytics"),
+    ("Data Processing Systems", "Big Data and Data Analytics"),
+    ("Time Series Analysis", "Big Data and Data Analytics"),
+    ("Encryption Algorithms", "Cyber Security"),
+    ("Secure Software Development", "Cyber Security"),
+    ("Network Security", "Cyber Security"),
+    ("Authentication Systems", "Cyber Security"),
+    ("Forensic Computing", "Cyber Security"),
+]
+
+# BERT Modeli ve Tokenizer Yükleme
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+model = BertModel.from_pretrained("bert-base-uncased")
+
+
+def get_text_embedding(text):
+    """Metni BERT kullanarak vektör haline getirir."""
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1).numpy()  # Ortalama vektörü al
+
+
+def determine_article_topic_bert(article):
+    """BERT modelini kullanarak makalenin konusunu belirler ve günceller."""
+    txt_path = os.path.join(settings.MEDIA_ROOT, "text", f"{article.tracking_number}.txt")
+
+    try:
+        with open(txt_path, "r", encoding="utf-8") as file:
+            content = file.read()
+    except FileNotFoundError:
+        print(f"Hata: {txt_path} bulunamadı.")
+        return
+
+    # 📌 Makale içeriğinin vektörünü al
+    article_embedding = get_text_embedding(content)
+
+    best_match = None
+    best_score = -1
+
+    for subtopic, main_topic in TOPIC_MAP:
+        subtopic_embedding = get_text_embedding(subtopic)  # Alt başlık için embedding al
+        score = cosine_similarity(article_embedding, subtopic_embedding)[0][0]  # Benzerlik hesapla
+
+        if score > best_score:
+            best_score = score
+            best_match = (main_topic, subtopic)
+
+    if best_match and best_score > 0.5:  # Benzerlik eşiği belirlenebilir
+        article.topic, article.subtopic = best_match
+    else:
+        article.topic, article.subtopic = "Bilinmiyor", "Bilinmiyor"
+
+    article.save(update_fields=["topic", "subtopic"])
+    print(f"Eşleşme bulundu: {article.subtopic} -> {article.topic}")
+
+
+from .models import User, Article
+from .utils import generate_tracking_number, pdf_to_text
 def makale_yukle(request):
-    """
-    Kullanıcının makale yükleme işlemini gerçekleştirir.
-    - PDF dosyasını yalnızca yazarlar yükleyebilir.
-    - PDF'yi takip numarasıyla articles/ klasörüne kaydeder.
-    - PDF içeriğini çıkarıp takip numarasıyla text/ klasörüne kaydeder.
-    - Takip numarasını veritabanına kaydeder.
-    """
     if request.method == 'POST':
         email = request.POST.get('email')
         title = request.POST.get('title')
@@ -104,55 +121,59 @@ def makale_yukle(request):
             messages.error(request, "Lütfen makale başlığını girin.")
             return redirect('makale_yukle')
 
-        # Kullanıcıyı e-posta adresiyle bul veya oluştur
         user, created = User.objects.get_or_create(email=email, defaults={'username': email, 'user_type': 'Yazar', 'is_active': True})
 
-        # Eğer kullanıcı türü Yazar değilse, hata mesajı ver
         if user.user_type != 'Yazar':
             messages.error(request, "Sadece Yazarlar makale yükleyebilir.")
             return redirect('makale_yukle')
 
-        # Yüklenen dosyayı al
         makale = request.FILES.get('makale')
 
-        if makale:
-            # Yalnızca PDF dosyalarını kabul et
-            if makale.name.endswith('.pdf'):
-                tracking_number = generate_tracking_number()  # 5 haneli eşsiz takip numarası oluştur
+        if makale and makale.name.endswith('.pdf'):
+            tracking_number = generate_tracking_number()
 
-                # Dosya yollarını belirleme
-                pdf_filename = f"{tracking_number}.pdf"
-                txt_filename = f"{tracking_number}.txt"
+            pdf_filename = f"{tracking_number}.pdf"
+            txt_filename = f"{tracking_number}.txt"
 
-                pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', pdf_filename)
-                txt_path = os.path.join(settings.MEDIA_ROOT, 'text', txt_filename)
+            pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', pdf_filename)
+            txt_path = os.path.join(settings.MEDIA_ROOT, 'text', txt_filename)
 
-                # PDF dosyasını kaydet
-                with open(pdf_path, 'wb') as destination:
-                    for chunk in makale.chunks():
-                        destination.write(chunk)
+            with open(pdf_path, 'wb') as destination:
+                for chunk in makale.chunks():
+                    destination.write(chunk)
 
-                # PDF içeriğini çıkar ve resimleri kaydet
-                extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
+            # PDF içeriğini çıkarıp TXT olarak kaydet
+            extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
 
-                # Makaleyi veritabanına kaydet
-                Article.objects.create(
-                    title=title,
-                    author=user,
-                    file=f"articles/{pdf_filename}",
-                    tracking_number=tracking_number,
-                    content=extracted_text
-                )
+            # 🔹 Makaleyi kaydet (başlangıçta bilinmiyor)
+            article = Article.objects.create(
+                title=title,
+                author=user,
+                file=f"articles/{pdf_filename}",
+                tracking_number=tracking_number,
+                content=extracted_text,
+                topic="Bilinmiyor",
+                subtopic="Bilinmiyor"
+            )
 
-                messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
-                return redirect('yazar_sayfasi')
+            # 🔹 Konu belirleme işlemi burada çalıştırılır
+            determine_article_topic_bert(article)
 
-            else:
-                messages.error(request, "Yalnızca PDF formatında makale yükleyebilirsiniz!")
+            messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
+            return redirect('yazar_sayfasi')
+
         else:
-            messages.warning(request, "Lütfen bir makale dosyası seçin.")
+            messages.error(request, "Lütfen yalnızca PDF formatında dosya yükleyin!")
 
     return render(request, 'makalesistemi.html')
+
+
+import spacy
+from collections import Counter
+from main.models import MainSubtopic  # MainSubtopic modelini içe aktarın
+
+# spaCy dil modeli yükleniyor
+nlp = spacy.load("en_core_web_sm")
 
 
 # Yazar sayfası
@@ -598,3 +619,10 @@ def generate_pdf_with_images_and_text(text, images, output_path):
 
     # PDF'i kaydet
     c.save()
+
+import spacy
+from collections import Counter
+
+# spaCy dil modeli yükleniyor
+nlp = spacy.load("en_core_web_sm")
+
