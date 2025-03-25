@@ -92,8 +92,21 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+import os
+
+# settings.py
 
 
+# FERNET_KEY çevresel değişkenini yükle
+import environ
+import os
+
+# Çevresel değişkenleri yükleyelim
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# FERNET_KEY değişkenini alalım
+FERNET_KEY = env('FERNET_KEY', default='default_secret_key')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

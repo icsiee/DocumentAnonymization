@@ -60,6 +60,9 @@ import random
 import fitz  # PyMuPDF
 from django.db import models
 from django.conf import settings
+from django.db import models
+from cryptography.fernet import Fernet
+from django.conf import settings
 
 class Article(models.Model):
     STATUS_CHOICES = [
@@ -71,15 +74,28 @@ class Article(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                               limit_choices_to={'user_type': 'Yazar'})
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Yazar'})
     file = models.FileField(upload_to='articles/', blank=True, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
-    tracking_number = models.CharField(max_length=50, unique=True, blank=True)  # Otomatik oluşturulacak
-    content = models.TextField(blank=True, null=True)  # PDF içeriğini saklamak için
-    topic = models.CharField(max_length=255, blank=True, null=True)  # Makale konusu
-    subtopic = models.CharField(max_length=255, blank=True, null=True)  # Makale alt başlığı
+    tracking_number = models.CharField(max_length=50, unique=True, blank=True)
+    content = models.TextField(blank=True, null=True)  # Makale içeriği
+    encrypted_content = models.TextField(blank=True, null=True)  # Şifreli içerik
+    topic = models.CharField(max_length=255, blank=True, null=True)
+    subtopic = models.CharField(max_length=255, blank=True, null=True)
+
+    def encrypt_content(self):
+        """Makale içeriğini şifrele"""
+        key = settings.FERNET_KEY
+        cipher_suite = Fernet(key)
+        encrypted = cipher_suite.encrypt(self.content.encode())
+        self.encrypted_content = encrypted.decode()
+
+    def save(self, *args, **kwargs):
+        """Makale kaydedilmeden önce içeriği şifrele"""
+        if self.content and not self.encrypted_content:
+            self.encrypt_content()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

@@ -627,3 +627,130 @@ from collections import Counter
 # spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
 
+import spacy
+from cryptography.fernet import Fernet
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article
+import re
+
+# SpaCy modelini yükleyin
+nlp = spacy.load("en_core_web_sm")
+
+# Şifreleme için Fernet anahtarını oluşturun (Bu anahtar bir kez oluşturulup güvenli bir yerde saklanmalıdır)
+# Anahtarınızı güvenli bir şekilde saklayın (örneğin, çevresel değişkenlerde).
+from cryptography.fernet import Fernet
+from django.conf import settings
+
+from cryptography.fernet import Fernet
+
+# Anahtarı çevresel değişkenden al
+key = settings.FERNET_KEY.encode()  # Anahtarın byte formatına çevrilmesi gerekebilir
+cipher_suite = Fernet(key)
+
+
+
+from cryptography.fernet import Fernet
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+def encrypt_article(request, article_id):
+    article = Article.objects.get(id=article_id)
+
+    # Yazar ve kurum isimlerini belirle
+    sensitive_words = ['Yazar', 'Kurum']  # Buraya daha fazla özel kelime ekleyebilirsiniz
+    encrypted_content = article.content
+
+    for word in sensitive_words:
+        # Bu kelimeleri şifrele ve içeriğe yansıt
+        encrypted_word = encrypt_word(word)
+        encrypted_content = encrypted_content.replace(word, encrypted_word)
+
+    # Şifreli içeriği kaydet
+    article.encrypted_content = encrypted_content
+    article.save()
+
+    # Başarı mesajı ve yönlendirme
+    messages.success(request, "Makale başarıyla şifrelendi!")
+    return redirect('view_encrypted_article', article_id=article.id)
+
+def encrypt_word(word):
+    """Kelimeyi şifreler"""
+    key = settings.FERNET_KEY
+    cipher_suite = Fernet(key)
+    encrypted = cipher_suite.encrypt(word.encode())
+    return encrypted.decode()
+
+from django.http import HttpResponse
+import os
+
+from django.http import HttpResponse
+
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from .models import Article
+
+
+def download_encrypted_article(request, article_id):
+    # Makale verisini al
+    article = Article.objects.get(id=article_id)
+
+    # Şifreli içerik al
+    content = article.encrypted_content if article.encrypted_content else article.content
+
+    # HTTP yanıtını oluştur
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{article.title}_encrypted.pdf"'
+
+    # PDF oluşturma
+    p = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+
+    # Başlık yazdır
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(100, height - 40, f"Makale Başlığı: {article.title}")
+
+    # Şifreli içeriği yazdır
+    p.setFont("Helvetica", 10)
+    text_object = p.beginText(100, height - 60)
+    text_object.setFont("Helvetica", 10)
+    text_object.setTextOrigin(100, height - 60)
+
+    # Şifreli içeriği sayfaya ekle (satır satır ekleniyor)
+    lines = content.splitlines()
+    for line in lines:
+        text_object.textLine(line)
+
+    p.drawText(text_object)
+    p.showPage()
+    p.save()
+
+    return response
+
+
+from django.shortcuts import get_object_or_404, render
+
+
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from cryptography.fernet import Fernet
+from .models import Article
+from django.conf import settings
+import re
+
+
+# Şifrelenmiş makaleyi görüntüleme
+def view_encrypted_article(request, article_id):
+    article = Article.objects.get(id=article_id)
+
+    # Eğer şifreli içerik varsa, onu al
+    content = article.encrypted_content if article.encrypted_content else article.content
+    print(f"Makale içeriği: {content}")  # Debugging için ekledik
+
+    # İçeriği şablona gönder
+    return render(request, 'view_encrypted_article.html', {'content': content, 'article': article})
+
+

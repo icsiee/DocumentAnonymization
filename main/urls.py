@@ -1,12 +1,9 @@
 from django.urls import path
-from . import views
+from . import views  # Doğru kullanım
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import yazar_sayfasi, generate_random_reviewers
-from .views import delete_article
-from .views import pdf_goruntule
 
-
+from .views import yazar_sayfasi, generate_random_reviewers, pdf_goruntule, delete_article
 
 urlpatterns = ([
     path('', views.yazar_sayfasi, name='yazar_sayfasi'),
@@ -23,6 +20,11 @@ urlpatterns = ([
     path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),  # Makale ID'si ile revize etme sayfasına yönlendir
     path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
                    path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
+path('encrypt_article/<int:article_id>/', views.encrypt_article, name='encrypt_article'),
+                   path('view_encrypted_article/<int:article_id>/', views.view_encrypted_article,
+                        name='view_encrypted_article'),
+                   path('download_encrypted_article/<int:article_id>/', views.download_encrypted_article,
+                        name='download_encrypted_article'),
 
                ]
    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
