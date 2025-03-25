@@ -638,9 +638,9 @@ from .models import User, ReviewerSubtopic
 from collections import defaultdict
 
 def hakem_page(request, hakem_id):
-    print(hakem_id)
+
     # Hakemi ID'ye göre al
-    hakem = get_object_or_404(User, id=hakem_id, user_type='Hakem')
+    hakem = User.objects.filter(username__startswith=hakem_id).first()
 
     # Hakemin yaptığı incelemeleri al
     reviewers = ReviewerSubtopic.objects.filter(reviewer=hakem).select_related('subtopic')
