@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Django Projesi{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Ana Sayfa</a>
+            <a href="/hakem/1/">Hakem 1</a>
+            <a href="/hakem/2/">Hakem 2</a>
+        </nav>
+    </header>
+
+    <div class="content">
+        {%for a in reviewers%}
+        {{a}}
+        {%endfor%}
+    </div>
+
+    <footer>
+        <p>© 2025 Django Projesi</p>
+    </footer>
+</body>
+</html>

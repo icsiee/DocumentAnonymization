@@ -201,45 +201,51 @@ def editor_page(request):
     # Tüm makaleleri veritabanından çek
     articles = Article.objects.all()
 
-    # Hakemler zaten var mı kontrol et
-    existing_reviewers = User.objects.filter(user_type='Hakem')
-
     # Editör bilgisini al
     editor = User.objects.filter(user_type='Editör').first()
 
     # Editöre gelen mesajları al
     editor_messages = Message.objects.filter(receiver=editor).order_by('-sent_date')
 
-    # Eğer hakem sayısı 10'dan az ise yeni hakemler oluştur
-    if existing_reviewers.count() < 10:
-        for i in range(1, 11):
-            email = f'hakem{i}@gmail.com'  # Hakemlerin e-posta formatı
-            if not User.objects.filter(username=email).exists():
-                User.objects.create(username=email, user_type='Hakem', email=email)
+    # Hatalı oluşturulmuş hakemleri temizle (örneğin "hakem5" gibi yanlış kayıtları)
+    User.objects.filter(user_type='Hakem').exclude(email__regex=r'^hakem\d+@gmail\.com$').delete()
+
+    # Güncellenmiş hakem listesini çek
+    existing_reviewers = User.objects.filter(user_type='Hakem')
+
+    # Eğer 13 hakem yoksa eksik olanları oluştur
+    if existing_reviewers.count() < 13:
+        for i in range(1, 14):
+            email = f"hakem{i}@gmail.com"
+
+            # Eğer bu e-posta adresiyle bir hakem yoksa oluştur
+            if not User.objects.filter(email=email).exists():
+                User.objects.create(username=email, email=email, user_type='Hakem')
+
+        # Hakemleri alt konulara atama işlemi
         assign_reviewers_to_subtopics()
 
-        messages.success(request, "Hakemler başarıyla oluşturuldu.")
+        messages.success(request, "Eksik hakemler başarıyla oluşturuldu.")
     else:
-        messages.info(request, "Hakemler zaten oluşturulmuş.")
-    reviewers = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').order_by('reviewer__username')
+        messages.info(request, "Tüm hakemler zaten mevcut.")
 
+    # Hakemleri ve alt konularını al
+    reviewers = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').order_by('reviewer__email')
+
+    # Hakemleri ve atandıkları alt konuları gruplama
     grouped_reviewers = defaultdict(list)
-
     for entry in reviewers:
-        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
+        grouped_reviewers[entry.reviewer.email].append(entry.subtopic.name)
 
     # JSON formatına uygun çıktı
-    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
-                      grouped_reviewers.items()]
+    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in grouped_reviewers.items()]
 
-    print(grouped_result)
+    print(grouped_result)  # Terminale çıktı verir, istersen kaldırabilirsin
 
-    hakem=ReviewerSubtopic.objects.all()
-    # Şablonu render et
     return render(request, 'editor.html', {
         'editor_messages': editor_messages,
         'articles': articles,
-        "reviewers": grouped_result,
+        'reviewers': grouped_result,
     })
 
 
@@ -626,4 +632,33 @@ from collections import Counter
 
 # spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
+
+from django.shortcuts import render, get_object_or_404
+from .models import User, ReviewerSubtopic
+from collections import defaultdict
+
+def hakem_page(request, hakem_id):
+    print(hakem_id)
+    # Hakemi ID'ye göre al
+    hakem = get_object_or_404(User, id=hakem_id, user_type='Hakem')
+
+    # Hakemin yaptığı incelemeleri al
+    reviewers = ReviewerSubtopic.objects.filter(reviewer=hakem).select_related('subtopic')
+
+    grouped_reviewers = defaultdict(list)
+
+    for entry in reviewers:
+        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
+
+    # JSON formatına uygun çıktı
+    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
+                      grouped_reviewers.items()]
+
+    # Hakemin bilgileriyle şablonu render et
+    return render(request, 'hakem_page.html', {
+        'hakem': hakem,
+        'reviewers': grouped_result,
+    })
+
+
 

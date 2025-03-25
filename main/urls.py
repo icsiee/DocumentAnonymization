@@ -22,7 +22,8 @@ urlpatterns = ([
     path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
     path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),  # Makale ID'si ile revize etme sayfasına yönlendir
     path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
-                   path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
+    path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
+    path('hakem/<int:hakem_id>/', views.hakem_page, name='hakem_page'),
 
                ]
    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
