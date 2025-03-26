@@ -93,6 +93,7 @@
 
 
 <!-- Hakemler Listesi -->
+<!-- Hakemler Listesi -->
 <div class="card shadow-lg mt-4">
     <div class="card-body">
         <h3 class="card-title text-primary">👨‍⚖️ Hakem Listesi ve Atanan Konular</h3>
@@ -107,7 +108,7 @@
                 <tbody>
                     {% for reviewer in reviewers %}
                         <tr class="text-center">
-                            <td>{{ reviewer.username }}</td>
+                            <td><a href="{% url 'hakem_page' hakem_username=reviewer.username %}">{{ reviewer.username }}</a></td>
                             <td>
                                 {% for reviewer_subtopic in reviewer_subtopics %}
                                     {% if reviewer_subtopic.reviewer == reviewer %}
@@ -122,6 +123,7 @@
         </div>
     </div>
 </div>
+
 
 
 

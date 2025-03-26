@@ -769,29 +769,21 @@ from django.shortcuts import render, get_object_or_404
 from .models import User, ReviewerSubtopic
 from collections import defaultdict
 
-def hakem_page(request, hakem_id):
+from django.shortcuts import render, get_object_or_404
+from .models import User
 
-    # Hakemi ID'ye göre al
-    hakem = User.objects.filter(username__startswith=hakem_id).first()
 
-    # Hakemin yaptığı incelemeleri al
-    reviewers = ReviewerSubtopic.objects.filter(reviewer=hakem).select_related('subtopic')
+def hakem_page(request, hakem_username):
+    """Hakem sayfası işlemleri"""
+    reviewer = get_object_or_404(User, username=hakem_username, user_type='Hakem')
 
-    grouped_reviewers = defaultdict(list)
+    # Hakemin atanan konuları
+    reviewer_subtopics = ReviewerSubtopic.objects.filter(reviewer=reviewer)
 
-    for entry in reviewers:
-        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
-
-    # JSON formatına uygun çıktı
-    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
-                      grouped_reviewers.items()]
-
-    # Hakemin bilgileriyle şablonu render et
     return render(request, 'hakem_page.html', {
-        'hakem': hakem,
-        'reviewers': grouped_result,
+        'reviewer': reviewer,
+        'reviewer_subtopics': reviewer_subtopics,
     })
-
 
 
 import spacy

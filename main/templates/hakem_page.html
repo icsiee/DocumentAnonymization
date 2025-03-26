@@ -15,7 +15,7 @@
         <div class="container">
             <a class="navbar-brand" href="#">🔍 Hakem Paneli</a>
             <div class="navbar-nav">
-                <a class="nav-link" href="{% url 'yazar_sayfasi' %}">Geri Dön</a>
+                <a class="nav-link" href="{% url 'editor_page' %}">Geri Dön</a>
             </div>
         </div>
     </nav>
@@ -24,24 +24,17 @@
 
         <!-- Hakem Bilgisi ve Atanan Konular -->
         <div class="card shadow-lg mt-4">
-            <div class="card-body">
-                <h3 class="card-title text-warning">Hakem: {{ hakem.username }}</h3>
+    <div class="card-body">
+        <h3 class="card-title text-primary">Hakem: {{ reviewer.username }}</h3>
+        <h5>Atanan Alt Konular:</h5>
+        <ul>
+            {% for reviewer_subtopic in reviewer_subtopics %}
+                <li>{{ reviewer_subtopic.subtopic.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 
-                <h5 class="text-primary">Atanan Konular:</h5>
-                <ul>
-                    {% for reviewer in reviewers %}
-                        {% if reviewer.reviewer == hakem.username %}
-                            <li>
-                                <strong>{{ reviewer.reviewer }}:</strong>
-                                <ul>
-                                    {% for subtopic in reviewer.subtopics %}
-                                        <li>{{ subtopic }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
 
                 <h5 class="text-primary mt-4">Atanan Makaleler:</h5>
                 <div class="table-responsive">

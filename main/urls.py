@@ -24,7 +24,7 @@ urlpatterns = [
     path('encrypt_article/<int:article_id>/', views.encrypt_article, name='encrypt_article'),
     path('view_encrypted_article/<int:article_id>/', views.view_encrypted_article, name='view_encrypted_article'),
     path('download_encrypted_article/<int:article_id>/', views.download_encrypted_article, name='download_encrypted_article'),
-    path('<str:hakem_id>/', views.hakem_page, name='hakem_page'),
+    path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
                   path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics,
                        name='create_reviewers_and_assign_topics'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
