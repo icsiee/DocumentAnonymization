@@ -158,7 +158,14 @@ def editor_page(request):
 
     # 1️⃣ Editör, makaleler ve mesajları al
     articles = Article.objects.all()
-    editor = User.objects.filter(user_type='Editör').first()
+
+    # Editör kullanıcısını oluştur
+    editor, created = User.objects.get_or_create(
+        username='editör@gmail.com',
+        defaults={"user_type": "Editör", "email": 'editör@gmail.com'}
+    )
+
+    # Eğer editör yeni oluşturulmuşsa mesajlar boş olabilir
     editor_messages = Message.objects.filter(receiver=editor).order_by('-sent_date')
 
     # 2️⃣ Hakemleri ve atanan konuları al
@@ -226,6 +233,7 @@ def editor_page(request):
         'reviewers': reviewers,  # Hakemler burada gönderilecek
         'reviewer_subtopics': reviewer_subtopics  # Hakemlerin atandığı konular burada gönderilecek
     })
+
 
 
 
