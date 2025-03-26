@@ -6,22 +6,6 @@ from django.conf import settings  # Import settings to reference the custom user
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-SUBTOPICS = [
-    ("Derin Öğrenme", "Yapay Zeka ve Makine Öğrenimi"),
-    ("Doğal Dil İşleme", "Yapay Zeka ve Makine Öğrenimi"),
-    ("Bilgisayarla Görü", "Yapay Zeka ve Makine Öğrenimi"),
-    ("Generatif Yapay Zeka", "Yapay Zeka ve Makine Öğrenimi"),
-    ("Veri Madenciliği", "Büyük Veri ve Veri Analitiği"),
-    ("Veri Görselleştirme", "Büyük Veri ve Veri Analitiği"),
-    ("Veri İşleme Sistemleri", "Büyük Veri ve Veri Analitiği"),
-    ("Zaman Serisi Analizi", "Büyük Veri ve Veri Analitiği"),
-    ("Şifreleme Algoritmaları", "Siber Güvenlik"),
-    ("Güvenli Yazılım Geliştirme", "Siber Güvenlik"),
-    ("Ağ Güvenliği", "Siber Güvenlik"),
-    ("Kimlik Doğrulama Sistemleri", "Siber Güvenlik"),
-    ("Adli Bilişim", "Siber Güvenlik"),
-]
-
 
 class User(AbstractUser):
     USER_TYPES = [

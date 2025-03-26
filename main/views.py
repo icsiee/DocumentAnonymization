@@ -1,11 +1,6 @@
 
-from .models import *
-from collections import defaultdict
-import re
 from .forms import *
-import random
-from django.contrib.auth import get_user_model
-from django.http import JsonResponse
+
 from django.views.decorators.csrf import csrf_exempt
 from .utils import *
 
@@ -22,21 +17,218 @@ from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
 
 # 🔹 Önceden tanımlanmış konu ve alt konular
+import random
+from django.contrib.auth import get_user_model
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from .models import Subtopic, ReviewerSubtopic, User  # Modelleri import et
+
+User = get_user_model()  # Kullanıcı modelini al
+
+# Konu haritasını fonksiyon içinde tanımla, hata almayı önler
+import random
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import Subtopic, ReviewerSubtopic, User
+
+# Konu haritası
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import User, Subtopic, ReviewerSubtopic
 TOPIC_MAP = [
-    ("Deep Learning", "Artificial Intelligence and Machine Learning"),
-    ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
-    ("Computer Vision", "Artificial Intelligence and Machine Learning"),
-    ("Generative Artificial Intelligence", "Artificial Intelligence and Machine Learning"),
-    ("Data Mining", "Big Data and Data Analytics"),
-    ("Data Visualization", "Big Data and Data Analytics"),
-    ("Data Processing Systems", "Big Data and Data Analytics"),
-    ("Time Series Analysis", "Big Data and Data Analytics"),
-    ("Encryption Algorithms", "Cyber Security"),
-    ("Secure Software Development", "Cyber Security"),
-    ("Network Security", "Cyber Security"),
-    ("Authentication Systems", "Cyber Security"),
-    ("Forensic Computing", "Cyber Security"),
-]
+            ("Deep Learning", "Artificial Intelligence and Machine Learning"),
+            ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
+            ("Computer Vision", "Artificial Intelligence and Machine Learning"),
+            ("Generative Artificial Intelligence", "Artificial Intelligence and Machine Learning"),
+            ("Data Mining", "Big Data and Data Analytics"),
+            ("Data Visualization", "Big Data and Data Analytics"),
+            ("Data Processing Systems", "Big Data and Data Analytics"),
+            ("Time Series Analysis", "Big Data and Data Analytics"),
+            ("Encryption Algorithms", "Cyber Security"),
+            ("Secure Software Development", "Cyber Security"),
+            ("Network Security", "Cyber Security"),
+            ("Authentication Systems", "Cyber Security"),
+            ("Forensic Computing", "Cyber Security"),
+        ]
+# Hakemler ve Konuların Oluşturulması
+import random
+from django.contrib import messages
+from .models import User, Subtopic, ReviewerSubtopic
+
+def create_reviewers_and_assign_topics(request):
+    if request.method == "POST":
+        try:
+            # 1️⃣ Hakemleri oluştur
+            reviewer_users = []
+            for i in range(1, 14):  # 13 hakem
+                reviewer, created = User.objects.get_or_create(
+                    username=f"hakem{i}",
+                    defaults={"user_type": "Reviewer", "email": f"hakem{i}@gmail.com"}
+                )
+                reviewer_users.append(reviewer)
+                print(f"Reviewer created: {reviewer.username}")  # Debug print
+
+            # 2️⃣ Konuları oluştur
+            subtopics = []
+            TOPIC_MAP = [
+                ("Deep Learning", "Artificial Intelligence and Machine Learning"),
+                ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
+                ("Computer Vision", "Artificial Intelligence and Machine Learning"),
+                ("Generative Artificial Intelligence", "Artificial Intelligence and Machine Learning"),
+                ("Data Mining", "Big Data and Data Analytics"),
+                ("Data Visualization", "Big Data and Data Analytics"),
+                ("Data Processing Systems", "Big Data and Data Analytics"),
+                ("Time Series Analysis", "Big Data and Data Analytics"),
+                ("Encryption Algorithms", "Cyber Security"),
+                ("Secure Software Development", "Cyber Security"),
+                ("Network Security", "Cyber Security"),
+                ("Authentication Systems", "Cyber Security"),
+                ("Forensic Computing", "Cyber Security"),
+            ]
+
+            for subtopic_name, main_topic in TOPIC_MAP:
+                subtopic, created = Subtopic.objects.get_or_create(
+                    name=subtopic_name,
+                    defaults={"main_topic": main_topic}
+                )
+                subtopics.append(subtopic)
+                print(f"Subtopic created: {subtopic.name}")  # Debug print
+
+            # 3️⃣ Hakemlere rastgele konu ata
+            assigned_topics = set()
+            for reviewer in reviewer_users:
+                num_topics = random.randint(1, 5)  # Her hakeme 1-5 konu atanacak
+                assigned_subtopics = random.sample(subtopics, num_topics)
+
+                for subtopic in assigned_subtopics:
+                    _, created = ReviewerSubtopic.objects.get_or_create(reviewer=reviewer, subtopic=subtopic)
+                    if created:
+                        assigned_topics.add(subtopic)
+                    print(f"Assigned {subtopic.name} to {reviewer.username}")  # Debug print
+
+            # 4️⃣ Boşta kalan konuları atama
+            unassigned_topics = set(subtopics) - assigned_topics
+            for subtopic in unassigned_topics:
+                random_reviewer = random.choice(reviewer_users)
+                ReviewerSubtopic.objects.get_or_create(reviewer=random_reviewer, subtopic=subtopic)
+                print(f"Assigned remaining {subtopic.name} to {random_reviewer.username}")  # Debug print
+
+            messages.success(request, "Hakemler ve konular başarıyla oluşturuldu ve atandı!")
+        except Exception as e:
+            messages.error(request, f"Bir hata oluştu: {e}")
+            print(f"Error occurred: {e}")  # Debug print
+        return redirect("editor_page")
+
+    return redirect("editor_page")
+
+
+import random
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import User, Subtopic, ReviewerSubtopic, Article, Message
+
+import random
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import User, Subtopic, ReviewerSubtopic, Article, Message
+
+
+import random
+from django.contrib import messages
+from django.shortcuts import render
+from .models import User, Article, Message, Subtopic, ReviewerSubtopic
+
+import random
+from django.contrib import messages
+from django.shortcuts import render
+from .models import User, Article, Message, Subtopic, ReviewerSubtopic
+
+import random
+from django.contrib import messages
+from django.shortcuts import render
+from .models import User, Article, Message, Subtopic, ReviewerSubtopic
+
+import random
+from django.contrib import messages
+from django.shortcuts import render
+from .models import User, Article, Message, Subtopic, ReviewerSubtopic
+
+def editor_page(request):
+    """Editör sayfası işlemleri"""
+
+    # 1️⃣ Editör, makaleler ve mesajları al
+    articles = Article.objects.all()
+    editor = User.objects.filter(user_type='Editör').first()
+    editor_messages = Message.objects.filter(receiver=editor).order_by('-sent_date')
+
+    # 2️⃣ Hakemleri ve atanan konuları al
+    reviewers = User.objects.filter(user_type='Hakem')  # Hakemleri alıyoruz
+    reviewer_subtopics = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').all()
+
+    # 3️⃣ Hakemleri oluştur
+    reviewer_users = []
+    for i in range(1, 14):  # 13 hakem
+        reviewer, created = User.objects.get_or_create(
+            username=f"hakem{i}",
+            defaults={"user_type": "Hakem", "email": f"hakem{i}@gmail.com"}
+        )
+        reviewer_users.append(reviewer)
+
+    # 4️⃣ Konuları oluştur
+    subtopics = []
+    TOPIC_MAP = [
+        ("Deep Learning", "Artificial Intelligence and Machine Learning"),
+        ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
+        ("Computer Vision", "Artificial Intelligence and Machine Learning"),
+        ("Generative Artificial Intelligence", "Artificial Intelligence and Machine Learning"),
+        ("Data Mining", "Big Data and Data Analytics"),
+        ("Data Visualization", "Big Data and Data Analytics"),
+        ("Data Processing Systems", "Big Data and Data Analytics"),
+        ("Time Series Analysis", "Big Data and Data Analytics"),
+        ("Encryption Algorithms", "Cyber Security"),
+        ("Secure Software Development", "Cyber Security"),
+        ("Network Security", "Cyber Security"),
+        ("Authentication Systems", "Cyber Security"),
+        ("Forensic Computing", "Cyber Security"),
+    ]
+
+    for subtopic_name, main_topic in TOPIC_MAP:
+        subtopic, created = Subtopic.objects.get_or_create(
+            name=subtopic_name,
+            defaults={"main_topic": main_topic}
+        )
+        subtopics.append(subtopic)
+
+    # 5️⃣ Her hakeme sırasıyla bir konu ata
+    for i, reviewer in enumerate(reviewer_users):
+        subtopic = subtopics[i]  # İlk konuyu sırasıyla hakemlere ata
+        ReviewerSubtopic.objects.get_or_create(reviewer=reviewer, subtopic=subtopic)
+
+    # 6️⃣ Kalan konuları rastgele dağıt
+    all_assigned_subtopics = [subtopics[i] for i in range(13)]  # İlk başta atanmış konular
+    remaining_subtopics = [subtopic for subtopic in subtopics if subtopic not in all_assigned_subtopics]  # Kalan konular
+
+    for reviewer in reviewer_users:
+        # Kalan konulardan rastgele birini ata
+        available_subtopics = [subtopic for subtopic in remaining_subtopics if subtopic not in all_assigned_subtopics]
+        if available_subtopics:  # Eğer boşta konu varsa
+            subtopic = random.choice(available_subtopics)
+            ReviewerSubtopic.objects.get_or_create(reviewer=reviewer, subtopic=subtopic)
+            all_assigned_subtopics.append(subtopic)  # Bu konu artık atanmış olarak ekleniyor
+
+    # 7️⃣ Başarılı mesajı gönder
+    messages.success(request, "Hakemler ve konular başarıyla oluşturuldu ve atandı!")
+
+    # 8️⃣ Veriyi render et
+    return render(request, 'editor.html', {
+        'editor_messages': editor_messages,
+        'articles': articles,
+        'reviewers': reviewers,  # Hakemler burada gönderilecek
+        'reviewer_subtopics': reviewer_subtopics  # Hakemlerin atandığı konular burada gönderilecek
+    })
+
+
+
 
 # BERT Modeli ve Tokenizer Yükleme
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -146,8 +338,6 @@ def makale_yukle(request):
 
 
 import spacy
-from collections import Counter
-from main.models import MainSubtopic  # MainSubtopic modelini içe aktarın
 
 # spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
@@ -197,50 +387,21 @@ def makale_durum_sorgulama(request):
     })
 
 
-def editor_page(request):
-    # Tüm makaleleri veritabanından çek
-    articles = Article.objects.all()
+import random
+from collections import defaultdict
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib import messages
+from .models import Article, User, Message, ReviewerSubtopic, MainSubtopic
 
-    # Hakemler zaten var mı kontrol et
-    existing_reviewers = User.objects.filter(user_type='Hakem')
+from collections import defaultdict
+import random
+from django.shortcuts import render
+from django.contrib import messages
+from .models import Subtopic
 
-    # Editör bilgisini al
-    editor = User.objects.filter(user_type='Editör').first()
 
-    # Editöre gelen mesajları al
-    editor_messages = Message.objects.filter(receiver=editor).order_by('-sent_date')
 
-    # Eğer hakem sayısı 10'dan az ise yeni hakemler oluştur
-    if existing_reviewers.count() < 10:
-        for i in range(1, 11):
-            email = f'hakem{i}@gmail.com'  # Hakemlerin e-posta formatı
-            if not User.objects.filter(username=email).exists():
-                User.objects.create(username=email, user_type='Hakem', email=email)
-        assign_reviewers_to_subtopics()
-
-        messages.success(request, "Hakemler başarıyla oluşturuldu.")
-    else:
-        messages.info(request, "Hakemler zaten oluşturulmuş.")
-    reviewers = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').order_by('reviewer__username')
-
-    grouped_reviewers = defaultdict(list)
-
-    for entry in reviewers:
-        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
-
-    # JSON formatına uygun çıktı
-    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
-                      grouped_reviewers.items()]
-
-    print(grouped_result)
-
-    hakem=ReviewerSubtopic.objects.all()
-    # Şablonu render et
-    return render(request, 'editor.html', {
-        'editor_messages': editor_messages,
-        'articles': articles,
-        "reviewers": grouped_result,
-    })
 
 
 # Hakem sayfası
@@ -325,19 +486,9 @@ def send_message(request):
     return render(request, 'send_message.html')
 
 # Tüm makaleleri silme
-import os
-import shutil
-from django.conf import settings
-from django.shortcuts import redirect, render
-from django.contrib import messages
-from .models import Article
 
 import os
 import shutil
-from django.conf import settings
-from django.shortcuts import redirect, render
-from django.contrib import messages
-from .models import Article
 
 
 def delete_all_articles(request):
@@ -481,10 +632,6 @@ def assign_reviewers_to_subtopics():
 
     return assignments  # Atanan hakemleri liste olarak döndür
 
-
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import messages
-
 def revize_et(request, article_id):
     # Makaleyi al
     article = get_object_or_404(Article, id=article_id)
@@ -553,22 +700,7 @@ def revize_et(request, article_id):
 
 
 
-
-from django.http import FileResponse, Http404
-from django.conf import settings
-import os
-
-# belge_anonimlestirme/views.py dosyasına ekleme yapın
-
-from django.http import FileResponse, Http404
-from django.conf import settings
-import os
-from .models import Article
-
 from django.http import Http404, FileResponse
-import os
-from django.conf import settings
-from .models import Article
 
 def pdf_goruntule(request, article_id):
     article = get_object_or_404(Article, id=article_id)
@@ -591,10 +723,8 @@ def generate_random_reviewers(request):
 
     return JsonResponse({"error": "Geçersiz istek"}, status=400)
 
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+
 from PIL import Image
-import os
 
 def generate_pdf_with_images_and_text(text, images, output_path):
     # PDF dosyasını oluştur
@@ -627,12 +757,37 @@ from collections import Counter
 # spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
 
+from django.shortcuts import render, get_object_or_404
+from .models import User, ReviewerSubtopic
+from collections import defaultdict
+
+def hakem_page(request, hakem_id):
+
+    # Hakemi ID'ye göre al
+    hakem = User.objects.filter(username__startswith=hakem_id).first()
+
+    # Hakemin yaptığı incelemeleri al
+    reviewers = ReviewerSubtopic.objects.filter(reviewer=hakem).select_related('subtopic')
+
+    grouped_reviewers = defaultdict(list)
+
+    for entry in reviewers:
+        grouped_reviewers[entry.reviewer.username].append(entry.subtopic.name)
+
+    # JSON formatına uygun çıktı
+    grouped_result = [{"reviewer": reviewer, "subtopics": subtopics} for reviewer, subtopics in
+                      grouped_reviewers.items()]
+
+    # Hakemin bilgileriyle şablonu render et
+    return render(request, 'hakem_page.html', {
+        'hakem': hakem,
+        'reviewers': grouped_result,
+    })
+
+
+
 import spacy
-from cryptography.fernet import Fernet
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Article
-import re
+
 
 # SpaCy modelini yükleyin
 nlp = spacy.load("en_core_web_sm")
@@ -648,10 +803,6 @@ from cryptography.fernet import Fernet
 key = settings.FERNET_KEY.encode()  # Anahtarın byte formatına çevrilmesi gerekebilir
 cipher_suite = Fernet(key)
 
-
-
-from cryptography.fernet import Fernet
-from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Article
@@ -752,5 +903,8 @@ def view_encrypted_article(request, article_id):
 
     # İçeriği şablona gönder
     return render(request, 'view_encrypted_article.html', {'content': content, 'article': article})
+
+
+
 
 
