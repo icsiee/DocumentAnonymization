@@ -3,10 +3,6 @@ from .forms import *
 
 from django.views.decorators.csrf import csrf_exempt
 from .utils import *
-
-User = get_user_model()
-
-import fitz  # PyMuPDF
 import spacy
 
 
@@ -16,25 +12,10 @@ import torch
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
 
-# 🔹 Önceden tanımlanmış konu ve alt konular
-import random
 from django.contrib.auth import get_user_model
-from django.contrib import messages
-from django.shortcuts import redirect, render
-from .models import Subtopic, ReviewerSubtopic, User  # Modelleri import et
 
 User = get_user_model()  # Kullanıcı modelini al
 
-# Konu haritasını fonksiyon içinde tanımla, hata almayı önler
-import random
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from .models import Subtopic, ReviewerSubtopic, User
-
-# Konu haritası
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import User, Subtopic, ReviewerSubtopic
 TOPIC_MAP = [
             ("Deep Learning", "Artificial Intelligence and Machine Learning"),
             ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
@@ -121,37 +102,6 @@ def create_reviewers_and_assign_topics(request):
 
     return redirect("editor_page")
 
-
-import random
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from .models import User, Subtopic, ReviewerSubtopic, Article, Message
-
-import random
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from .models import User, Subtopic, ReviewerSubtopic, Article, Message
-
-
-import random
-from django.contrib import messages
-from django.shortcuts import render
-from .models import User, Article, Message, Subtopic, ReviewerSubtopic
-
-import random
-from django.contrib import messages
-from django.shortcuts import render
-from .models import User, Article, Message, Subtopic, ReviewerSubtopic
-
-import random
-from django.contrib import messages
-from django.shortcuts import render
-from .models import User, Article, Message, Subtopic, ReviewerSubtopic
-
-import random
-from django.contrib import messages
-from django.shortcuts import render
-from .models import User, Article, Message, Subtopic, ReviewerSubtopic
 
 def editor_page(request):
     """Editör sayfası işlemleri"""
@@ -425,8 +375,6 @@ def reviewer_page(request):
             reviewer = User.objects.get(email=email, user_type='Hakem')
 
             # Editör tarafından atanmış makaleleri al
-            assignments = Assignment.objects.filter(reviewer=reviewer)
-            reviewer_articles = [assignment.article for assignment in assignments]
 
             if not reviewer_articles:
                 messages.warning(request, "Bu hakem için atanmış makale bulunmamaktadır.")
@@ -520,7 +468,7 @@ def delete_all_articles(request):
             article.delete()
 
         # 4️⃣ Belirtilen klasörleri temizle
-        folders_to_clear = ['images', 'articles', 'text']  # Sadece klasör isimleri
+        folders_to_clear = ['images', 'articles', 'text','encrypted_articles']  # Sadece klasör isimleri
         for folder in folders_to_clear:
             folder_path = os.path.join(settings.MEDIA_ROOT, folder)  # Tam yol oluştur
 
@@ -807,25 +755,6 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Article
 
-def encrypt_article(request, article_id):
-    article = Article.objects.get(id=article_id)
-
-    # Yazar ve kurum isimlerini belirle
-    sensitive_words = ['Yazar', 'Kurum']  # Buraya daha fazla özel kelime ekleyebilirsiniz
-    encrypted_content = article.content
-
-    for word in sensitive_words:
-        # Bu kelimeleri şifrele ve içeriğe yansıt
-        encrypted_word = encrypt_word(word)
-        encrypted_content = encrypted_content.replace(word, encrypted_word)
-
-    # Şifreli içeriği kaydet
-    article.encrypted_content = encrypted_content
-    article.save()
-
-    # Başarı mesajı ve yönlendirme
-    messages.success(request, "Makale başarıyla şifrelendi!")
-    return redirect('view_encrypted_article', article_id=article.id)
 
 def encrypt_word(word):
     """Kelimeyi şifreler"""
@@ -845,41 +774,7 @@ from reportlab.pdfgen import canvas
 from .models import Article
 
 
-def download_encrypted_article(request, article_id):
-    # Makale verisini al
-    article = Article.objects.get(id=article_id)
 
-    # Şifreli içerik al
-    content = article.encrypted_content if article.encrypted_content else article.content
-
-    # HTTP yanıtını oluştur
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{article.title}_encrypted.pdf"'
-
-    # PDF oluşturma
-    p = canvas.Canvas(response, pagesize=letter)
-    width, height = letter
-
-    # Başlık yazdır
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(100, height - 40, f"Makale Başlığı: {article.title}")
-
-    # Şifreli içeriği yazdır
-    p.setFont("Helvetica", 10)
-    text_object = p.beginText(100, height - 60)
-    text_object.setFont("Helvetica", 10)
-    text_object.setTextOrigin(100, height - 60)
-
-    # Şifreli içeriği sayfaya ekle (satır satır ekleniyor)
-    lines = content.splitlines()
-    for line in lines:
-        text_object.textLine(line)
-
-    p.drawText(text_object)
-    p.showPage()
-    p.save()
-
-    return response
 
 
 from django.shortcuts import get_object_or_404, render
@@ -905,6 +800,107 @@ def view_encrypted_article(request, article_id):
     return render(request, 'view_encrypted_article.html', {'content': content, 'article': article})
 
 
+from django.shortcuts import get_object_or_404, redirect
+from .models import Article
+from django.contrib import messages
 
+from django.shortcuts import render, redirect
+from .models import Article
+
+from django.conf import settings
+from django.shortcuts import redirect
+from django.contrib import messages
+
+import spacy
+from PIL import Image, ImageFilter
+import fitz  # PyMuPDF
+import os
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+# spaCy modelini yükle
+nlp = spacy.load("en_core_web_sm")
+
+import spacy
+from PIL import Image, ImageFilter
+
+from django.conf import settings
+from django.shortcuts import render, redirect
+
+# spaCy modelini yükle
+nlp = spacy.load("en_core_web_sm")
+
+import re
+
+import fitz  # PyMuPDF
+
+
+
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import Article
+from .utils import process_and_save_pdf
+
+from django.http import JsonResponse
+from .models import Article
+import os
+
+from django.shortcuts import get_object_or_404
+
+def encrypt_article(request, article_id):
+    """Makale PDF'sini şifrele ve sansürle."""
+    article = get_object_or_404(Article, id=article_id)  # Makaleyi veritabanından çek
+    output_folder = settings.MEDIA_ROOT  # PDF'nin kaydedileceği klasör
+
+    # PDF şifreleme ve sansürleme işlemi
+    censored_pdf_path = process_and_save_pdf(article, output_folder)
+
+    # Sansürlenmiş PDF'yi güncelle
+    article.encrypted_pdf = censored_pdf_path
+    article.save()
+
+    return redirect('editor_page')  # Kullanıcıyı editör sayfasına yönlendir
+
+
+def encrypt_article_view(request, article_id):
+    """Makalenin şifrelenmiş PDF'sini oluştur ve kullanıcıya yanıt gönder."""
+    article = get_object_or_404(Article, id=article_id)
+    output_folder = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles')  # Klasör yolunu ayarla
+
+    try:
+        censored_pdf_path = encrypt_article(article, output_folder)
+        return JsonResponse({
+            "success": True,
+            "message": "Şifreleme başarılı!",
+            "pdf_url": censored_pdf_path  # PDF dosyasının URL'sini döndür
+        })
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message": f"Hata oluştu: {str(e)}"
+        })
+
+
+from django.http import FileResponse, Http404
+import os
+
+from django.http import FileResponse, Http404
+
+def download_encrypted_pdf(request, article_id):
+    try:
+        article = Article.objects.get(id=article_id)
+        encrypted_pdf_path = article.encrypted_pdf
+
+        if not os.path.exists(encrypted_pdf_path):
+            raise Http404("PDF dosyası bulunamadı.")
+
+        # Şifrelenmiş PDF'yi indirmek için geri döner
+        return FileResponse(open(encrypted_pdf_path, 'rb'), as_attachment=True, filename=os.path.basename(encrypted_pdf_path))
+
+    except Article.DoesNotExist:
+        raise Http404("Makale bulunamadı.")
 
 

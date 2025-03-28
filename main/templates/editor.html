@@ -69,22 +69,23 @@
                 </thead>
                 <tbody>
                     {% for article in articles %}
-                        <tr class="text-center">
-                            <td>{{ article.tracking_number }}</td>
-                            <td>{{ article.title }}</td>
-                            <td>{{ article.author.username }}</td>
-                            <td>
-                                <span class="badge bg-info">{{ article.get_status_display }}</span>
-                            </td>
-                            <td>{{ article.submission_date }}</td>
-                            <td>
-<a href="{% url 'view_encrypted_article' article.id %}" class="btn btn-sm btn-info">📄 Görüntüle</a>
-<a href="{% url 'download_encrypted_article' article.id %}">Şifreli Makaleyi İndir (PDF)</a>
-<a href="{% url 'encrypt_article' article.id %}" class="btn btn-sm btn-warning">🔒 Şifrele</a>
-</td>
+<tr class="text-center">
+    <td>{{ article.tracking_number }}</td>
+    <td>{{ article.title }}</td>
+    <td>{{ article.author.username }}</td>
+    <td>
+        <span class="badge bg-info">{{ article.get_status_display }}</span>
+    </td>
+    <td>{{ article.submission_date }}</td>
+    <td>
+        <a href="{% url 'view_encrypted_article' article.id %}" class="btn btn-sm btn-info">📄 Görüntüle</a>
+        <!-- Benzersiz ID'li şifreleme butonu -->
+        <button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">Makale Şifrele</button>
+        <a id="downloadLink-{{ article.id }}" href="#" style="display:none;" download>Şifrelenmiş PDF'yi İndir</a>
+    </td>
+</tr>
+{% endfor %}
 
-                        </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -161,3 +162,35 @@
 
 </body>
 </html>
+
+<!-- Şifrele Butonunu Güncelleme -->
+<button class="btn btn-sm btn-info" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">Makale Şifrele</button>
+
+<script>
+document.querySelectorAll('.encryptBtn').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var articleId = this.getAttribute('data-article-id');  // Bu butonun id'sini alıyoruz
+
+        fetch(`/encrypt_article/${articleId}/`, {
+            method: 'GET',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+
+                // Şifrelenmiş PDF'yi indirme bağlantısını ayarla
+                var downloadLink = document.getElementById('downloadLink-' + articleId);
+                downloadLink.href = data.file_url;
+                downloadLink.style.display = 'block';
+                downloadLink.innerText = "Şifrelenmiş PDF'yi İndir";
+            } else {
+                alert("Hata: " + data.error);
+            }
+        })
+        .catch(error => console.error('Hata:', error));
+    });
+});
+
+</script>
+

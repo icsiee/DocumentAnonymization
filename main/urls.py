@@ -3,7 +3,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import yazar_sayfasi, generate_random_reviewers
-from .views import delete_article
+from .views import delete_article,encrypt_article_view
 from .views import pdf_goruntule
 from .views import create_reviewers_and_assign_topics, editor_page
 
@@ -23,10 +23,11 @@ urlpatterns = [
     path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
     path('encrypt_article/<int:article_id>/', views.encrypt_article, name='encrypt_article'),
     path('view_encrypted_article/<int:article_id>/', views.view_encrypted_article, name='view_encrypted_article'),
-    path('download_encrypted_article/<int:article_id>/', views.download_encrypted_article, name='download_encrypted_article'),
+    path('download_encrypted_pdf/<int:article_id>/', views.download_encrypted_pdf, name='download_encrypted_pdf'),
     path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
                   path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics,
                        name='create_reviewers_and_assign_topics'),
+
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Media dosyalarına erişim için ekleme
