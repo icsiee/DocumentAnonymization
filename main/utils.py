@@ -96,49 +96,46 @@ def generate_pdf_with_images_and_text(text, images, output_path):
     c.save()
 
 
+
+
+import fitz  # PyMuPDF
+import os
+import re
 import spacy
-
-nlp = spacy.load("en_core_web_sm")
-
-
-from .models import *
-
-from PIL import Image, ImageFilter
-
-# SpaCy modelini yükle
-nlp = spacy.load("en_core_web_sm")
-
-
-import fitz  # PyMuPDF
-import os
-
-
-import re
-
-import fitz  # PyMuPDF
-import re
-import os
-
-
-# Yazar adlarını ve kurum bilgilerini tespit etmek için kullanılacak regex
-import fitz  # PyMuPDF
-import re
-import os
-import fitz  # PyMuPDF
-import os
-import re
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from .models import Article  # Makale modeli
 
+import fitz  # PyMuPDF
+import os
+import re
+import spacy
+from django.conf import settings
+from django.shortcuts import get_object_or_404, redirect
+from .models import Article  # Makale modeli
+
+# SpaCy'nin büyük modelini yükle
+nlp = spacy.load("en_core_web_lg")
+
 def extract_author_names(text):
-    """PDF içindeki yazar isimlerini büyük harf formatına göre tespit eder."""
-    author_pattern = r"\b[A-Z]+(?: [A-Z]+)+\b"  # Büyük harfli kelime gruplarını bul
-    authors = set(re.findall(author_pattern, text))
+    """Başlık ve Abstract kısmı arasındaki metinden özel isimleri (yazar isimlerini) tespit eder."""
+    # Abstract'ı büyük/küçük harf duyarsız aramak için
+    abstract_match = re.search(r'\babstract\b', text, re.IGNORECASE)
+    abstract_index = abstract_match.start() if abstract_match else len(text)  # Abstract'ın ilk yerini bul
+    pre_abstract_text = text[:abstract_index]  # Abstract kısmından önceki metni al
+
+    # SpaCy ile metni işle ve sadece PERSON etiketli isimleri al
+    doc = nlp(pre_abstract_text)  # SpaCy ile metni işliyoruz
+
+    authors = set()
+    for ent in doc.ents:
+        if ent.label_ == "PERSON":  # Yalnızca 'PERSON' etiketli isimleri al
+            authors.add(ent.text)
+
     return authors
 
 def process_and_save_pdf(article):
-    """PDF üzerindeki yazar isimlerini sansürleyerek kaydeder."""
+    """PDF üzerindeki yazar isimlerini tespit edip sansürleyerek kaydeder."""
     original_pdf_path = article.file.path  # Orijinal PDF dosyasının yolu
     doc = fitz.open(original_pdf_path)
 
@@ -150,7 +147,7 @@ def process_and_save_pdf(article):
 
     for page in doc:  # PDF'in her sayfası için işlemi uygula
         text = page.get_text("text")  # Sayfa metnini al
-        author_list = extract_author_names(text)  # Yazar isimlerini tespit et
+        author_list = extract_author_names(text)  # Abstract'tan önceki kısımdan yazar isimlerini tespit et
 
         for author in author_list:
             areas = page.search_for(author)  # Sayfa içinde yazar isminin geçtiği yerleri bul

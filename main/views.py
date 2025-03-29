@@ -6,7 +6,6 @@ from .utils import *
 import spacy
 
 
-nlp = spacy.load("en_core_web_sm")
 
 import torch
 from transformers import BertTokenizer, BertModel
@@ -34,7 +33,8 @@ TOPIC_MAP = [
 # Hakemler ve Konuların Oluşturulması
 import random
 from django.contrib import messages
-from .models import User, Subtopic, ReviewerSubtopic
+from .models import User, Subtopic, ReviewerSubtopic, Review
+
 
 def create_reviewers_and_assign_topics(request):
     if request.method == "POST":
@@ -298,7 +298,6 @@ def makale_yukle(request):
 import spacy
 
 # spaCy dil modeli yükleniyor
-nlp = spacy.load("en_core_web_sm")
 
 
 # Yazar sayfası
@@ -710,9 +709,6 @@ def generate_pdf_with_images_and_text(text, images, output_path):
 import spacy
 from collections import Counter
 
-# spaCy dil modeli yükleniyor
-nlp = spacy.load("en_core_web_sm")
-
 from django.shortcuts import render, get_object_or_404
 from .models import User, ReviewerSubtopic
 from collections import defaultdict
@@ -737,9 +733,6 @@ def hakem_page(request, hakem_username):
 import spacy
 
 
-# SpaCy modelini yükleyin
-nlp = spacy.load("en_core_web_sm")
-
 # Şifreleme için Fernet anahtarını oluşturun (Bu anahtar bir kez oluşturulup güvenli bir yerde saklanmalıdır)
 # Anahtarınızı güvenli bir şekilde saklayın (örneğin, çevresel değişkenlerde).
 from cryptography.fernet import Fernet
@@ -763,29 +756,11 @@ def encrypt_word(word):
     encrypted = cipher_suite.encrypt(word.encode())
     return encrypted.decode()
 
-from django.http import HttpResponse
-import os
 
-from django.http import HttpResponse
-
-from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from .models import Article
 
-
-
-
-
-from django.shortcuts import get_object_or_404, render
-
-
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
 from cryptography.fernet import Fernet
-from .models import Article
-from django.conf import settings
-import re
 
 
 # Şifrelenmiş makaleyi görüntüleme
@@ -800,37 +775,10 @@ def view_encrypted_article(request, article_id):
     return render(request, 'view_encrypted_article.html', {'content': content, 'article': article})
 
 
-from django.shortcuts import get_object_or_404, redirect
-from .models import Article
-from django.contrib import messages
-
-from django.shortcuts import render, redirect
-from .models import Article
-
-from django.conf import settings
-from django.shortcuts import redirect
-from django.contrib import messages
-
-import spacy
-from PIL import Image, ImageFilter
-import fitz  # PyMuPDF
-import os
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Article
-
-# spaCy modelini yükle
-nlp = spacy.load("en_core_web_sm")
-
-import spacy
 from PIL import Image, ImageFilter
 
 from django.conf import settings
 from django.shortcuts import render, redirect
-
-# spaCy modelini yükle
-nlp = spacy.load("en_core_web_sm")
 
 import re
 
@@ -841,12 +789,10 @@ import fitz  # PyMuPDF
 
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Article
 from .utils import process_and_save_pdf
 
 from django.http import JsonResponse
 from .models import Article
-import os
 
 from django.shortcuts import get_object_or_404
 
@@ -882,7 +828,6 @@ def encrypt_article_view(request, article_id):
         })
 
 
-from django.http import FileResponse, Http404
 import os
 
 from django.http import FileResponse, Http404
