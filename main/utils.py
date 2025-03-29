@@ -97,19 +97,13 @@ def generate_pdf_with_images_and_text(text, images, output_path):
 
 
 import spacy
-from collections import Counter
 
-# spaCy dil modeli yükleniyor
 nlp = spacy.load("en_core_web_sm")
 
 
 from .models import *
 
-from django.conf import settings
-
 from PIL import Image, ImageFilter
-from .models import Article  # Makale modeli
-import spacy
 
 # SpaCy modelini yükle
 nlp = spacy.load("en_core_web_sm")
@@ -127,60 +121,44 @@ import os
 
 
 # Yazar adlarını ve kurum bilgilerini tespit etmek için kullanılacak regex
+import fitz  # PyMuPDF
+import re
+import os
+import fitz  # PyMuPDF
+import os
+import re
+from django.conf import settings
+from django.shortcuts import get_object_or_404, redirect
+from .models import Article  # Makale modeli
+
 def extract_author_names(text):
-    """Yazar isimlerini başlık ve yazar kısmından tespit eder."""
-    author_regex = r"\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)+\b"  # Basit bir yazar adı regex örneği
-    authors = re.findall(author_regex, text)
+    """PDF içindeki yazar isimlerini büyük harf formatına göre tespit eder."""
+    author_pattern = r"\b[A-Z]+(?: [A-Z]+)+\b"  # Büyük harfli kelime gruplarını bul
+    authors = set(re.findall(author_pattern, text))
     return authors
 
-
-def censor_text(text, author_list):
-    """Metni sansürler ve yazar isimlerini '[SANSÜRLEDİ]' ile değiştirir."""
-    censored_text = text
-    for author in author_list:
-        censored_text = censored_text.replace(author, "[SANSÜRLEDİ]")
-    return censored_text
-
-
-def process_and_save_pdf(article, output_folder):
-    """PDF dosyasındaki yazar isimlerini sansürler ve yeni PDF dosyasını kaydeder."""
+def process_and_save_pdf(article):
+    """PDF üzerindeki yazar isimlerini sansürleyerek kaydeder."""
     original_pdf_path = article.file.path  # Orijinal PDF dosyasının yolu
     doc = fitz.open(original_pdf_path)
 
-    encrypted_folder = os.path.join(output_folder, "encrypted_articles")
-    os.makedirs(encrypted_folder, exist_ok=True)  # Klasör yoksa oluştur
+    # Sansürlü PDF'yi kaydetmek için yeni bir klasör oluştur
+    encrypted_folder = os.path.join(settings.MEDIA_ROOT, "encrypted_articles")
+    os.makedirs(encrypted_folder, exist_ok=True)
 
-    censored_pdf_path = os.path.join(encrypted_folder, f"{article.tracking_number}_encrypted.pdf")
-    pdf_writer = fitz.open()
+    censored_pdf_path = os.path.join(encrypted_folder, f"{article.tracking_number}_censored.pdf")
 
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        text = page.get_text("text")
+    for page in doc:  # PDF'in her sayfası için işlemi uygula
+        text = page.get_text("text")  # Sayfa metnini al
+        author_list = extract_author_names(text)  # Yazar isimlerini tespit et
 
-        # Yazar isimlerini çıkarmak
-        author_list = extract_author_names(text)
+        for author in author_list:
+            areas = page.search_for(author)  # Sayfa içinde yazar isminin geçtiği yerleri bul
 
-        # Yazar isimlerini sansürlemek
-        censored_text = censor_text(text, author_list)
+            for rect in areas:
+                page.add_redact_annot(rect, fill=(0, 0, 0))  # Siyah kutu ile sansürle
 
-        # Yeni sayfa oluşturmak
-        new_page = pdf_writer.new_page(width=page.rect.width, height=page.rect.height)
-        new_page.insert_text((72, 72), censored_text, fontsize=12, color=(0, 0, 0))
+        page.apply_redactions()  # Sansürleri uygula
 
-    # Sansürlenmiş PDF'i kaydet
-    pdf_writer.save(censored_pdf_path)
+    doc.save(censored_pdf_path)  # Yeni sansürlenmiş PDF'yi kaydet
     return censored_pdf_path
-
-
-def extract_author_names(text):
-    """Yazar isimlerini büyük harflerle yazılmış şekilde tespit eder."""
-    author_pattern = r"\b[A-Z]+(?: [A-Z]+)+\b"  # Büyük harflerle yazılmış yazar isimlerini tespit eder
-    authors = re.findall(author_pattern, text)
-    return set(authors)
-
-
-def censor_text(text, author_list):
-    """Metindeki büyük harflerle yazılmış yazar isimlerini sansürler."""
-    for author in author_list:
-        text = re.sub(rf"\b{re.escape(author)}\b", "[SANSÜRLÜ]", text)
-    return text

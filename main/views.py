@@ -851,18 +851,16 @@ import os
 from django.shortcuts import get_object_or_404
 
 def encrypt_article(request, article_id):
-    """Makale PDF'sini şifrele ve sansürle."""
-    article = get_object_or_404(Article, id=article_id)  # Makaleyi veritabanından çek
-    output_folder = settings.MEDIA_ROOT  # PDF'nin kaydedileceği klasör
+    """Makale PDF'sini sansürleyerek şifrelenmiş olarak kaydeder."""
+    article = get_object_or_404(Article, id=article_id)
+    censored_pdf_path = process_and_save_pdf(article)  # Buradaki hatayı düzelttik!
 
-    # PDF şifreleme ve sansürleme işlemi
-    censored_pdf_path = process_and_save_pdf(article, output_folder)
-
-    # Sansürlenmiş PDF'yi güncelle
+    # Sansürlenmiş PDF'yi veritabanına kaydet
     article.encrypted_pdf = censored_pdf_path
     article.save()
 
-    return redirect('editor_page')  # Kullanıcıyı editör sayfasına yönlendir
+    return redirect('editor_page')
+
 
 
 def encrypt_article_view(request, article_id):
