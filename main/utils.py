@@ -114,151 +114,104 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from .models import Article  # Makale modeli
 
+# SpaCy'nin büyük modelini yükle
 import re
 import os
-import fitz  # PyMuPDF
 import spacy
+import fitz  # PyMuPDF
 from django.conf import settings
 
-# SpaCy modelini yükle
+# SpaCy dil modelini yükleyelim
 import re
 import os
-import fitz  # PyMuPDF
 import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
+
+# SpaCy dil modelini yükleyelim
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
+
+# SpaCy dil modelini yükleyelim
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
+
+# SpaCy dil modelini yükleyelim
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
 from django.conf import settings
 
 import re
 import os
-import fitz  # PyMuPDF
 import spacy
-from django.conf import settings
-import re
-import os
 import fitz  # PyMuPDF
-import spacy
 from django.conf import settings
 
-import re
-import os
-import fitz  # PyMuPDF
-import spacy
-from django.conf import settings
-import spacy
-import re
-import fitz  # PyMuPDF
-import os
+# SpaCy dil modelini yükleyelim
+nlp = spacy.load("en_core_web_lg")
 
-# Daha güçlü bir model kullanıyoruz
-nlp = spacy.load("en_core_web_trf")  # Transformer tabanlı model
+def extract_person_info(text):
+    """Başlık ve abstract arasında geçen kişi isimlerini, kurumlarını ve e-posta adreslerini tespit eder."""
+    # Abstract bölümünün başlangıcını bul
+    abstract_match = re.search(r'\babstract\b', text, re.IGNORECASE)
+    abstract_index = abstract_match.start() if abstract_match else len(text)
+    pre_abstract_text = text[:abstract_index]  # Abstract öncesindeki metin
 
-# Sansürlenmeyecek teknik terimler ve method isimleri
-IEEE_HEADINGS = {
-    "Emotion Recognition", "Neural Network", "Short-Time Fourier Transform",
-    "CNN", "LSTM", "Support Vector Machine", "Deep Learning", "Artificial Intelligence",
-    "INTRODUCTION","DATASET ON EMOTION WITH NATURALISTICSTIMULI (DENS)",
-    "METHODOLOGY","RESULTS","DISCUSSION","CONCLUSION","ACKNOWLEDGMENT",
-    "REFERENCES",
-}
-
-def is_heading(line):
-    """
-    Satırın IEEE başlıklarından biri olup olmadığını kontrol eder.
-    - Sadece büyük harf olup olmadığına bakmaz, belirlenen IEEE başlıklarıyla kıyaslar.
-    """
-    line = line.strip()
-    for heading in IEEE_HEADINGS:
-        if line.lower().startswith(heading.lower()):
-            return True
-    return False
-
-def extract_sensitive_info(text):
-    """
-    Abstract kısmına kadar olan bölümden yazar isimlerini, özel kurum isimlerini ve e-posta adreslerini tespit eder.
-    - IEEE formatına uygun başlıklar ve teknik terimler sansürlenmez.
-    - Referans kısmı sansürlenmez.
-    """
-
-    # REFERENCES bölümünü belirleyelim (sansürlememek için)
-    references_match = re.search(r'\bReferences\b', text, re.IGNORECASE)
-    references_index = references_match.start() if references_match else len(text)
-    pre_references_text = text[:references_index]  # References kısmından önceki metni al
-
-    # Abstract'ı büyük/küçük harf duyarsız aramak için
-    abstract_match = re.search(r'\babstract\b', pre_references_text, re.IGNORECASE)
-    abstract_index = abstract_match.start() if abstract_match else len(pre_references_text)
-    pre_abstract_text = pre_references_text[:abstract_index]  # Abstract kısmından önceki metni al
-
-    # Satır satır bölerek başlıkları belirleyelim
-    lines = pre_abstract_text.split("\n")
-    headings = {line.strip() for line in lines if is_heading(line)}
-
-    # SpaCy ile özel isimleri (yazar ve özel isim içeren kurum adları) bul
     doc = nlp(pre_abstract_text)
-    sensitive_info = set()
+    persons = set()
+    institutions = set()
+    emails = set(re.findall(r'\S+@\S+', pre_abstract_text))  # E-posta adreslerini bul
 
+    # Kişi isimlerini tespit et
     for ent in doc.ents:
-        # Eğer tespit edilen varlık bir başlıksa sansürleme!
-        if ent.text.strip() in headings:
-            continue
+        if ent.label_ == "PERSON":
+            persons.add(ent.text)
 
-        # Teknik terimler sansürlenmemeli
-        if ent.text in IEEE_HEADINGS:
-            continue
+    # Kurum bilgisini tespit et (Organizasyonlar: ORG etiketi)
+    for ent in doc.ents:
+        if ent.label_ == "ORG":  # "ORG" etiketi, organizasyonları belirtir
+            institutions.add(ent.text)
 
-        if ent.label_ == "PERSON":  # Yazar isimlerini ekle
-            sensitive_info.add(ent.text)
-
-        elif ent.label_ == "ORG":  # Kurum adlarındaki özel isimleri sansürle
-            org_words = ent.text.split()
-            filtered_org = []
-            for word in org_words:
-                word_doc = nlp(word)
-                if any(sub_ent.label_ == "PERSON" for sub_ent in word_doc.ents):
-                    filtered_org.append("[REDACTED]")  # Sadece özel isimleri sansürle
-                else:
-                    filtered_org.append(word)
-            redacted_org = " ".join(filtered_org)
-            if redacted_org != ent.text:
-                sensitive_info.add(ent.text)  # Orijinal metni sansürlenecek listeye ekle
-                sensitive_info.add(redacted_org)  # Sansürlenmiş hali de listeye eklensin
-
-    # Regex ile yazar isimlerini daha iyi yakalamak için ek analiz
-    name_regex = r"\b[A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2}\b"  # 2 veya 3 kelimelik isimleri bul
-    possible_names = re.findall(name_regex, pre_abstract_text)
-
-    for name in possible_names:
-        if name not in headings and name not in IEEE_HEADINGS:  # Başlıklara ve teknik terimlere dokunma
-            sensitive_info.add(name)
-
-    # Regex ile e-posta adreslerini bul
-    email_regex = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-    emails = re.findall(email_regex, pre_abstract_text)
-    sensitive_info.update(emails)  # Set'e eklendiği için tekrar eden değerler otomatik olarak filtrelenir
-
-    return sensitive_info
+    return persons, institutions, emails
 
 def process_and_save_pdf(article):
-    """PDF üzerindeki yazar isimlerini, kurum isimlerini (sadece özel isimleri) ve e-posta adreslerini sansürleyerek kaydeder."""
-    original_pdf_path = article.file.path  # Orijinal PDF dosyasının yolu
+    """PDF üzerindeki yazar bilgilerini tespit edip sansürleyerek kaydeder."""
+    original_pdf_path = article.file.path
     doc = fitz.open(original_pdf_path)
 
-    # Sansürlü PDF'yi kaydetmek için yeni bir klasör oluştur
+    # İlk sayfadaki bilgileri al
+    first_page_text = doc[0].get_text("text")
+    persons, institutions, emails = extract_person_info(first_page_text)
+
+    # Sansürlü PDF'yi kaydetmek için yeni klasör oluştur
     encrypted_folder = os.path.join(settings.MEDIA_ROOT, "encrypted_articles")
     os.makedirs(encrypted_folder, exist_ok=True)
 
     censored_pdf_path = os.path.join(encrypted_folder, f"{article.tracking_number}_censored.pdf")
 
-    for page in doc:  # PDF'in her sayfası için işlemi uygula
-        text = page.get_text("text")  # Sayfa metnini al
-        sensitive_info_list = extract_sensitive_info(text)  # Hassas bilgileri tespit et
+    for page in doc:
+        text = page.get_text("text")
 
-        for sensitive_info in sensitive_info_list:
-            areas = page.search_for(sensitive_info)  # Sayfa içinde bilgilerin geçtiği yerleri bul
-
+        # Sadece tespit edilen kişi isimleri, kurumları ve e-posta adreslerini sansürle
+        for sensitive_info in persons | institutions | emails:
+            areas = page.search_for(sensitive_info)
             for rect in areas:
-                page.add_redact_annot(rect, fill=(0, 0, 0))  # Siyah kutu ile sansürle
+                page.add_redact_annot(rect, fill=(0, 0, 0))
 
-        page.apply_redactions()  # Sansürleri uygula
+        page.apply_redactions()
 
-    doc.save(censored_pdf_path)  # Yeni sansürlenmiş PDF'yi kaydet
+    doc.save(censored_pdf_path)
     return censored_pdf_path
