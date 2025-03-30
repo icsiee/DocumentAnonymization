@@ -180,10 +180,11 @@ def extract_person_info(text):
         if ent.label_ == "PERSON":
             persons.add(ent.text)
 
-    # Kurum bilgisini tespit et (Organizasyonlar: ORG etiketi)
-    for ent in doc.ents:
-        if ent.label_ == "ORG":  # "ORG" etiketi, organizasyonları belirtir
-            institutions.add(ent.text)
+        # Kurum bilgisini tespit et (Organizasyonlar: ORG etiketi)
+        for ent in doc.ents:
+            if ent.label_ == "ORG":  # "ORG" etiketi, organizasyonları belirtir
+                if not any(word in ent.text for word in ["Network", "Computer", "IEEE"]):
+                    institutions.add(ent.text)
 
     return persons, institutions, emails
 
