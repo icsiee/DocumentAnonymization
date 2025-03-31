@@ -63,6 +63,8 @@
                                         <th>Yazar</th>
                                         <th>Durum</th>
                                         <th>Gönderim Tarihi</th>
+                                        <th>Şifreli mi?</th>
+
                                         <th>İşlemler</th>
                                     </tr>
                                 </thead>
@@ -76,10 +78,26 @@
                                             <span class="badge bg-info">{{ article.get_status_display }}</span>
                                         </td>
                                         <td>{{ article.submission_date }}</td>
+
+<td>
+    {% if article.is_encrypted %}
+        <span class="badge bg-success">🔒 Şifreli</span>
+    {% else %}
+        <span class="badge bg-danger">🔓 Şifresiz</span>
+    {% endif %}
+</td>
+
                                         <td>
                                             <a href="{% url 'view_encrypted_article' article.id %}" class="btn btn-sm btn-info">📄 Görüntüle</a>
                                             <!-- Benzersiz ID'li şifreleme butonu -->
-                                            <button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">Makale Şifrele</button>
+<!-- Makale Şifrele/Kaldır Butonu -->
+<button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
+    {% if article.is_encrypted %}
+        🔓 Şifreyi Kaldır
+    {% else %}
+        🔒 Makale Şifrele
+    {% endif %}
+</button>
                                             <a id="downloadLink-{{ article.id }}" href="#" style="display:none;" download>Şifrelenmiş PDF'yi İndir</a>
 
                                             <!-- Yükleniyor göstergesi -->
@@ -165,52 +183,66 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+
+
     <script>
-        // Makale şifreleme butonlarına tıklama olayını ekleyelim
-        document.querySelectorAll('.encryptBtn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                var articleId = this.getAttribute('data-article-id');  // Bu butonun id'sini alıyoruz
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".encryptBtn").forEach(button => {
+        button.addEventListener("click", function () {
+            let articleId = this.getAttribute("data-article-id");
+            let loadingIndicator = document.getElementById(`loading-${articleId}`);
+            let progressBar = document.getElementById(`progressBar-${articleId}`);
 
-                // Yükleniyor göstergesi gösterilsin
-                var loadingIndicator = document.getElementById('loading-' + articleId);
-                var progressBar = document.getElementById('progressBar-' + articleId);
-                loadingIndicator.style.display = 'block';
+            // Yükleniyor göstergesini aç
+            loadingIndicator.style.display = "block";
+            progressBar.style.width = "50%";
 
-                // Şifreleme işlemini başlat
-                fetch(`/encrypt_article/${articleId}/`, {
-                    method: 'GET',
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        alert(data.message);
+            fetch(`/encrypt_article/${articleId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let button = document.getElementById(`encryptBtn-${articleId}`);
+                    let statusCell = button.closest("tr").querySelector("td:nth-child(6)");
 
-                        // Şifrelenmiş PDF'yi indirme bağlantısını ayarla
-                        var downloadLink = document.getElementById('downloadLink-' + articleId);
-                        downloadLink.href = data.file_url;
-                        downloadLink.style.display = 'block';
-                        downloadLink.innerText = "Şifrelenmiş PDF'yi İndir";
+                    if (data.is_encrypted) {
+                        statusCell.innerHTML = `<span class="badge bg-success">🔒 Şifreli</span>`;
+                        button.innerHTML = "🔓 Şifreyi Kaldır";
                     } else {
-                        alert("Hata: " + data.error);
+                        statusCell.innerHTML = `<span class="badge bg-danger">🔓 Şifresiz</span>`;
+                        button.innerHTML = "🔒 Makale Şifrele";
                     }
-                })
-                .catch(error => console.error('Hata:', error))
-                .finally(() => {
-                    // Yükleniyor göstergesini gizle
-                    loadingIndicator.style.display = 'none';
-                });
-
-                // Simüle edilen işlem ilerleme durumu
-                var progress = 0;
-                var interval = setInterval(function() {
-                    progress += 10;
-                    progressBar.style.width = progress + '%';
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                    }
-                }, 500); // 0.5 saniye aralıklarla ilerleme
+                }
+            })
+            .finally(() => {
+                progressBar.style.width = "100%";
+                setTimeout(() => loadingIndicator.style.display = "none", 1000);
             });
         });
-    </script>
+    });
+});
+
+// CSRF token almak için yardımcı fonksiyon
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+       </script>
+
 </body>
 </html>

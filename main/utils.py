@@ -153,6 +153,17 @@ import os
 import spacy
 import fitz  # PyMuPDF
 from django.conf import settings
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
+
+import re
+import os
+import spacy
+import fitz  # PyMuPDF
+from django.conf import settings
 
 import re
 import os
@@ -162,6 +173,7 @@ from django.conf import settings
 
 # SpaCy dil modelini yükleyelim
 nlp = spacy.load("en_core_web_lg")
+
 
 def extract_person_info(text):
     """Başlık ve abstract arasında geçen kişi isimlerini, kurumlarını ve e-posta adreslerini tespit eder."""
@@ -181,12 +193,12 @@ def extract_person_info(text):
             persons.add(ent.text)
 
         # Kurum bilgisini tespit et (Organizasyonlar: ORG etiketi)
-        for ent in doc.ents:
-            if ent.label_ == "ORG":  # "ORG" etiketi, organizasyonları belirtir
-                if not any(word in ent.text for word in ["Network", "Computer", "IEEE"]):
-                    institutions.add(ent.text)
+        if ent.label_ == "ORG":  # "ORG" etiketi, organizasyonları belirtir
+            if not any(word in ent.text for word in ["Network", "Computer", "IEEE", "Department", "Engineering"]):
+                institutions.add(ent.text)
 
-    return persons, institutions, emails
+    return persons, institutions, emails, pre_abstract_text
+
 
 def process_and_save_pdf(article):
     """PDF üzerindeki yazar bilgilerini tespit edip sansürleyerek kaydeder."""
@@ -195,7 +207,17 @@ def process_and_save_pdf(article):
 
     # İlk sayfadaki bilgileri al
     first_page_text = doc[0].get_text("text")
-    persons, institutions, emails = extract_person_info(first_page_text)
+    persons, institutions, emails, pre_abstract_text = extract_person_info(first_page_text)
+
+    # E-posta adreslerinden isim tespit et ve abstract metniyle karşılaştır
+    for email in emails:
+        name_from_email = get_name_from_email(email)
+        if name_from_email and name_from_email.lower() in pre_abstract_text.lower():
+            persons.add(name_from_email)  # Abstract kısmındaki isim ile eşleşen ismi sansür listesine ekle
+
+    # Abstract kısmından önceki tüm kişi isimlerini sansürleme listesine ekle
+    all_person_names = extract_person_names_from_text(pre_abstract_text)
+    persons.update(all_person_names)
 
     # Sansürlü PDF'yi kaydetmek için yeni klasör oluştur
     encrypted_folder = os.path.join(settings.MEDIA_ROOT, "encrypted_articles")
@@ -216,3 +238,28 @@ def process_and_save_pdf(article):
 
     doc.save(censored_pdf_path)
     return censored_pdf_path
+
+
+def get_name_from_email(email):
+    """E-posta adresinden kişi ismi çıkarmak için basit bir fonksiyon."""
+    # E-posta adresinden '@' öncesindeki kısmı al (örn: anubhav2901@gmail.com -> anubhav2901)
+    name_part = email.split('@')[0]
+    name_parts = name_part.split('.')
+
+    # E-posta adresinde isme dair bir şey varsa, sadece ilk harfleri büyük yapıp döndürelim
+    if len(name_parts) > 1:
+        return ' '.join([part.capitalize() for part in name_parts])
+    return name_part.capitalize()  # E-posta adresinde sadece bir parça varsa, onu döndürelim
+
+
+def extract_person_names_from_text(text):
+    """Abstract öncesindeki metinden tüm kişi isimlerini çıkarır."""
+    doc = nlp(text)
+    person_names = set()
+
+    # Kişi isimlerini tespit et
+    for ent in doc.ents:
+        if ent.label_ == "PERSON":
+            person_names.add(ent.text)
+
+    return person_names

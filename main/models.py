@@ -48,6 +48,13 @@ from django.db import models
 from cryptography.fernet import Fernet
 from django.conf import settings
 
+from django.db import models
+from django.conf import settings
+import os
+import random
+import fitz  # PyMuPDF
+from cryptography.fernet import Fernet
+
 class Article(models.Model):
     STATUS_CHOICES = [
         ('Gönderildi', 'Gönderildi'),
@@ -63,10 +70,11 @@ class Article(models.Model):
     submission_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
     tracking_number = models.CharField(max_length=50, unique=True, blank=True)
-    content = models.TextField(blank=True, null=True)  # Makale içeriği
+    content = models.TextField(blank=True, null=True)  # Orijinal içerik
     encrypted_content = models.TextField(blank=True, null=True)  # Şifreli içerik
     topic = models.CharField(max_length=255, blank=True, null=True)
     subtopic = models.CharField(max_length=255, blank=True, null=True)
+    is_encrypted = models.BooleanField(default=False)  # 🔹 Yeni eklenen alan: Makale şifreli mi?
 
     def encrypt_content(self):
         """Makale içeriğini şifrele"""
@@ -74,11 +82,13 @@ class Article(models.Model):
         cipher_suite = Fernet(key)
         encrypted = cipher_suite.encrypt(self.content.encode())
         self.encrypted_content = encrypted.decode()
+        self.is_encrypted = True  # 🔹 Şifreleme sonrası işaretleme
 
     def save(self, *args, **kwargs):
-        """Makale kaydedilmeden önce içeriği şifrele"""
+        """Makale kaydedilirken şifreleme kontrolü yapılır"""
         if self.content and not self.encrypted_content:
             self.encrypt_content()
+        self.is_encrypted = bool(self.encrypted_content)  # 🔹 Şifreleme durumunu güncelle
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -95,34 +105,14 @@ class Article(models.Model):
         """PDF içeriğini ve resimleri çıkarır."""
         doc = fitz.open(file_path)
         text_content = ""
-        image_list = []
 
         for i, page in enumerate(doc):
             text_content += page.get_text("text") + "\n"
 
-            # Sayfadaki resimleri işle
-            for img_index, img in enumerate(page.get_images(full=True)):
-                xref = img[0]  # Image xref
-                base_image = doc.extract_image(xref)
-                image_bytes = base_image["image"]
-
-                # Dosya yolu oluştur
-                image_filename = f"{self.tracking_number}_page{i+1}_img{img_index+1}.png"
-                image_path = os.path.join(settings.MEDIA_ROOT, "images", image_filename)
-
-                # Resmi kaydet
-                with open(image_path, "wb") as img_file:
-                    img_file.write(image_bytes)
-
-                # Image modeline kaydet
-                ArticleImage.objects.create(article=self, image=f"images/{image_filename}")
-
-                image_list.append(image_filename)
-
-        return text_content, image_list
+        return text_content
 
     def save(self, *args, **kwargs):
-        """Otomatik olarak takip numarası oluşturur, PDF içeriğini ve resimleri çıkarır."""
+        """Otomatik olarak takip numarası oluşturur ve PDF içeriğini işler."""
         if not self.tracking_number:
             self.tracking_number = self.generate_tracking_number()
 
@@ -130,9 +120,14 @@ class Article(models.Model):
 
         if self.file:
             file_path = self.file.path
-            text_content, images = self.extract_pdf_text_and_images(file_path)
+            text_content = self.extract_pdf_text_and_images(file_path)
             self.content = text_content
             super().save(update_fields=['content'])  # Tekrar kaydet (sadece content değişecek)
+
+        # Şifreleme durumu güncelle
+        self.is_encrypted = bool(self.encrypted_content)
+        super().save(update_fields=['is_encrypted'])
+
 
 class MainSubtopic(models.Model):
     main_topic = models.CharField(max_length=255)

@@ -796,17 +796,31 @@ from .models import Article
 
 from django.shortcuts import get_object_or_404
 
-def encrypt_article(request, article_id):
-    """Makale PDF'sini sansürleyerek şifrelenmiş olarak kaydeder."""
-    article = get_object_or_404(Article, id=article_id)
-    censored_pdf_path = process_and_save_pdf(article)  # Buradaki hatayı düzelttik!
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Article
 
-    # Sansürlenmiş PDF'yi veritabanına kaydet
-    article.encrypted_pdf = censored_pdf_path
+def encrypt_article(request, article_id):
+    """Makale PDF'sini şifreleyerek veya şifreyi kaldırarak günceller."""
+    article = get_object_or_404(Article, id=article_id)
+
+    if article.is_encrypted:
+        # Makale zaten şifreli, şifreyi kaldır
+        article.encrypted_content = None  # Şifreli içeriği temizle
+        article.is_encrypted = False  # Durumu şifresiz yap
+    else:
+        # Makale şifreli değil, şifreleme işlemini gerçekleştir
+        censored_pdf_path = process_and_save_pdf(article)
+        article.encrypted_content = censored_pdf_path  # Şifreli içeriği kaydet
+        article.is_encrypted = True  # Şifreleme durumunu güncelle
+
     article.save()
 
-    return redirect('editor_page')
-
+    return JsonResponse({
+        'success': True,
+        'article_id': article.id,
+        'is_encrypted': article.is_encrypted
+    })
 
 
 def encrypt_article_view(request, article_id):

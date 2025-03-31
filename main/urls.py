@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from .views import yazar_sayfasi, generate_random_reviewers
 from .views import delete_article,encrypt_article_view
 from .views import pdf_goruntule
-from .views import create_reviewers_and_assign_topics, editor_page
+
 
 urlpatterns = [
     path('', views.yazar_sayfasi, name='yazar_sayfasi'),
