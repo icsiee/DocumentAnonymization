@@ -171,6 +171,17 @@ import spacy
 import fitz  # PyMuPDF
 from django.conf import settings
 
+import re
+import spacy
+import os
+import fitz  # PyMuPDF
+
+# SpaCy dil modelini yükleyelim
+import re
+import spacy
+import os
+import fitz  # PyMuPDF
+
 # SpaCy dil modelini yükleyelim
 nlp = spacy.load("en_core_web_lg")
 
@@ -200,6 +211,7 @@ def extract_person_info(text):
     return persons, institutions, emails, pre_abstract_text
 
 
+
 def process_and_save_pdf(article):
     """PDF üzerindeki yazar bilgilerini tespit edip sansürleyerek kaydeder."""
     original_pdf_path = article.file.path
@@ -225,14 +237,22 @@ def process_and_save_pdf(article):
 
     censored_pdf_path = os.path.join(encrypted_folder, f"{article.tracking_number}_censored.pdf")
 
+    # İlk 5 satırı atla ve sansürle
     for page in doc:
         text = page.get_text("text")
+        lines = text.split("\n")
+
+        # İlk 5 satırı atla
+        lines_to_process = lines[5:]
+
+        # İşlenecek metni birleştir
+        text_to_process = "\n".join(lines_to_process)
 
         # Sadece tespit edilen kişi isimleri, kurumları ve e-posta adreslerini sansürle
         for sensitive_info in persons | institutions | emails:
             areas = page.search_for(sensitive_info)
             for rect in areas:
-                page.add_redact_annot(rect, fill=(0, 0, 0))
+                page.add_redact_annot(rect, fill=(0, 0, 0))  # Siyah renk ile sansürle
 
         page.apply_redactions()
 
