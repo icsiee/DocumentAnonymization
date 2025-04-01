@@ -347,7 +347,7 @@ def makale_durum_sorgulama(request):
 import random
 from collections import defaultdict
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from .models import Article, User, Message, ReviewerSubtopic, MainSubtopic
 
@@ -823,23 +823,88 @@ def encrypt_article(request, article_id):
     })
 
 
-def encrypt_article_view(request, article_id):
-    """Makalenin şifrelenmiş PDF'sini oluştur ve kullanıcıya yanıt gönder."""
-    article = get_object_or_404(Article, id=article_id)
-    output_folder = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles')  # Klasör yolunu ayarla
+from django.http import FileResponse, Http404
+import os
+from django.conf import settings
+from .models import Article
 
-    try:
-        censored_pdf_path = encrypt_article(article, output_folder)
-        return JsonResponse({
-            "success": True,
-            "message": "Şifreleme başarılı!",
-            "pdf_url": censored_pdf_path  # PDF dosyasının URL'sini döndür
-        })
-    except Exception as e:
-        return JsonResponse({
-            "success": False,
-            "message": f"Hata oluştu: {str(e)}"
-        })
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+import os
+from django.conf import settings
+from .models import Article
+
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, HttpResponse
+import os
+from django.conf import settings
+from .models import Article
+
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, HttpResponse
+import os
+from django.conf import settings
+from .models import Article
+
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+import os
+from django.conf import settings
+
+# views.py
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+import os
+from django.conf import settings
+from .models import Article  # Article modelini import et
+
+# views.py
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+import os
+from django.conf import settings
+from .models import Article  # Article modelini import et
+
+# views.py
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+import os
+from django.conf import settings
+from .models import Article  # Article modelini import et
+
+
+from django.http import Http404, FileResponse
+from django.shortcuts import get_object_or_404
+import os
+from django.conf import settings
+
+from django.http import Http404, FileResponse
+from django.shortcuts import get_object_or_404
+import os
+from django.conf import settings
+
+def pdf_goruntule(request, tracking_number):
+    # Article'ı tracking_number ile al
+    article = get_object_or_404(Article, tracking_number=tracking_number)
+
+    # Dosya yolunu oluştur
+    file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
+
+    # Dosya var mı kontrol et
+    if not os.path.exists(file_path):
+        raise Http404(f"Dosya bulunamadı: {file_path}")
+
+    # PDF'yi tarayıcıda açılması için "inline" olarak döndür
+    response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+
+    # Tarayıcıda açılmasını sağlamak için "inline" değeri veriyoruz
+    response['Content-Disposition'] = f'inline; filename="{article.tracking_number}.pdf"'
+
+    # PDF başlığını kontrol et
+    response['Content-Type'] = 'application/pdf'
+
+    return response
+
 
 
 import os

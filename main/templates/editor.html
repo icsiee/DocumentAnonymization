@@ -71,8 +71,15 @@
                                 <tbody>
                                     {% for article in articles %}
                                     <tr class="text-center">
-                                        <td>{{ article.tracking_number }}</td>
+<td>
+    <a href="{% url 'pdf_goruntule' article.tracking_number %}" target="_blank" class="text-decoration-none">
+        {{ article.tracking_number }}
+    </a>
+</td>
+
+
                                         <td>{{ article.title }}</td>
+
                                         <td>{{ article.author.username }}</td>
                                         <td>
                                             <span class="badge bg-info">{{ article.get_status_display }}</span>
@@ -88,7 +95,6 @@
 </td>
 
                                         <td>
-                                            <a href="{% url 'view_encrypted_article' article.id %}" class="btn btn-sm btn-info">📄 Görüntüle</a>
                                             <!-- Benzersiz ID'li şifreleme butonu -->
 <!-- Makale Şifrele/Kaldır Butonu -->
 <button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
@@ -98,7 +104,6 @@
         🔒 Makale Şifrele
     {% endif %}
 </button>
-                                            <a id="downloadLink-{{ article.id }}" href="#" style="display:none;" download>Şifrelenmiş PDF'yi İndir</a>
 
                                             <!-- Yükleniyor göstergesi -->
                                             <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
