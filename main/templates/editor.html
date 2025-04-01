@@ -49,66 +49,91 @@
                 </div>
             </div>
 
+
+
+
+
+
+
+
             <!-- Makale Listesi -->
-<div class="col-md-6">
-    <div class="card shadow-lg mt-4">
-        <div class="card-body">
-            <h3 class="card-title text-primary">📄 Yüklenmiş Makaleler</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-dark text-center">
-                        <tr>
-                            <th>Takip No</th>
-                            <th>Başlık</th>
-                            <th>Yazar</th>
-                            <th>Durum</th>
-                            <th>Gönderim Tarihi</th>
-                            <th>Şifreli mi?</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for article in articles %}
-                        <tr class="text-center">
-                            <td>{{ article.tracking_number }}</td>
-                            <td>{{ article.title }}</td>
-                            <td>{{ article.author.username }}</td>
-                            <td>
-                                <span class="badge bg-info">{{ article.get_status_display }}</span>
-                            </td>
-                            <td>{{ article.submission_date }}</td>
-                            <td>
-                                {% if article.is_encrypted %}
-                                    <span class="badge bg-success">🔒 Şifreli</span>
-                                {% else %}
-                                    <span class="badge bg-danger">🔓 Şifresiz</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'view_encrypted_article' article.id %}" class="btn btn-sm btn-info">📄 Görüntüle</a>
-                                <button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
-                                    {% if article.is_encrypted %}
-                                        🔓 Şifreyi Kaldır
-                                    {% else %}
-                                        🔒 Makale Şifrele
-                                    {% endif %}
-                                </button>
-                                <a id="downloadLink-{{ article.id }}" href="#" style="display:none;" download>Şifrelenmiş PDF'yi İndir</a>
-                                <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
-                                <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
-                                    <div class="progress">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="progressBar-{{ article.id }}"></div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="col-md-6">
+                <div class="card shadow-lg mt-4">
+                    <div class="card-body">
+                        <h3 class="card-title text-primary">📄 Yüklenmiş Makaleler</h3>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark text-center">
+                                    <tr>
+                                        <th>Takip No</th>
+                                        <th>Başlık</th>
+                                        <th>Yazar</th>
+                                        <th>Durum</th>
+                                        <th>Gönderim Tarihi</th>
+                                        <th>Şifreli mi?</th>
+
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for article in articles %}
+                                    <tr class="text-center">
+<td>
+    <a href="{% url 'pdf_goruntule' article.tracking_number %}" target="_blank" class="text-decoration-none">
+        {{ article.tracking_number }}
+    </a>
+</td>
+
+
+                                        <td>{{ article.title }}</td>
+
+                                        <td>{{ article.author.username }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ article.get_status_display }}</span>
+                                        </td>
+                                        <td>{{ article.submission_date }}</td>
+
+<td>
+    {% if article.is_encrypted %}
+        <span class="badge bg-success">🔒 Şifreli</span>
+    {% else %}
+        <span class="badge bg-danger">🔓 Şifresiz</span>
+    {% endif %}
+</td>
+
+                                        <td>
+                                            <!-- Benzersiz ID'li şifreleme butonu -->
+<!-- Makale Şifrele/Kaldır Butonu -->
+<button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
+    {% if article.is_encrypted %}
+        🔓 Şifreyi Kaldır
+    {% else %}
+        🔒 Makale Şifrele
+    {% endif %}
+</button>
+                                                                            <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
+
+
+                                            <!-- Yükleniyor göstergesi -->
+                                            <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
+                                                <div class="progress">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="progressBar-{{ article.id }}"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+
+
+
+
 
 
         <!-- Hakemler Listesi -->

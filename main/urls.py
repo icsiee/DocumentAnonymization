@@ -3,7 +3,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import yazar_sayfasi, generate_random_reviewers
-from .views import delete_article,encrypt_article_view
+from .views import delete_article
 from .views import pdf_goruntule
 from .views import send_article_view
 
@@ -21,11 +21,12 @@ urlpatterns = [
     path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
     path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),
     path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
-    path('makale/pdf/<int:article_id>/', pdf_goruntule, name='pdf_goruntule'),
     path('encrypt_article/<int:article_id>/', views.encrypt_article, name='encrypt_article'),
-    path('view_encrypted_article/<int:article_id>/', views.view_encrypted_article, name='view_encrypted_article'),
     path('download_encrypted_pdf/<int:article_id>/', views.download_encrypted_pdf, name='download_encrypted_pdf'),
     path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
+                  path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics,
+                       name='create_reviewers_and_assign_topics'),
+    path('makale/pdf/<int:tracking_number>/', views.pdf_goruntule, name='pdf_goruntule'),
     path('send/<int:article_id>/', send_article_view, name='send_article'),
     path('assign_reviewer/<int:article_id>/<int:reviewer_id>/', views.assign_reviewer, name='assign_reviewer'),
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
