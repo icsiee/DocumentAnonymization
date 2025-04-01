@@ -926,3 +926,35 @@ def download_encrypted_pdf(request, article_id):
         raise Http404("Makale bulunamadı.")
 
 
+import random
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from django.contrib import messages
+from .models import Article, ReviewerSubtopic, User  # Modelleri kendi yapına göre güncelle
+
+def send_article_view(request, article_id):
+    try:
+        # Makale detaylarını al
+        article = get_object_or_404(Article, id=article_id)
+        subtopic = article.subtopic
+        print(subtopic)
+        subtopic_model = Subtopic.objects.filter(name=subtopic).first()
+
+        reviwer = ReviewerSubtopic.objects.filter(subtopic=subtopic_model).first()
+        print(reviwer)
+
+
+
+
+        context = {
+            "article": article,
+            "reviewer": reviwer,
+
+        }
+        return render(request, "article_detail.html", context)
+
+
+    except Exception as e:
+        return HttpResponse(f"<h1>Bir hata oluştu: {e}</h1>")
+
+

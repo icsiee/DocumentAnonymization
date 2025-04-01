@@ -49,6 +49,13 @@
                 </div>
             </div>
 
+
+
+
+
+
+
+
             <!-- Makale Listesi -->
             <div class="col-md-6">
                 <div class="card shadow-lg mt-4">
@@ -104,6 +111,8 @@
         🔒 Makale Şifrele
     {% endif %}
 </button>
+                                                                            <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
+
 
                                             <!-- Yükleniyor göstergesi -->
                                             <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
@@ -121,6 +130,11 @@
                 </div>
             </div>
         </div>
+
+
+
+
+
 
         <!-- Hakemler Listesi -->
         <div class="card shadow-lg mt-4">
