@@ -55,6 +55,7 @@ import random
 import fitz  # PyMuPDF
 from cryptography.fernet import Fernet
 
+
 class Article(models.Model):
     STATUS_CHOICES = [
         ('Gönderildi', 'Gönderildi'),
@@ -75,6 +76,7 @@ class Article(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     subtopic = models.CharField(max_length=255, blank=True, null=True)
     is_encrypted = models.BooleanField(default=False)  # 🔹 Yeni eklenen alan: Makale şifreli mi?
+
 
     def encrypt_content(self):
         """Makale içeriğini şifrele"""

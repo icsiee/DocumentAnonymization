@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from .views import yazar_sayfasi, generate_random_reviewers
 from .views import delete_article,encrypt_article_view
 from .views import pdf_goruntule
+from .views import send_article_view
 
 
 urlpatterns = [
@@ -25,8 +26,8 @@ urlpatterns = [
     path('view_encrypted_article/<int:article_id>/', views.view_encrypted_article, name='view_encrypted_article'),
     path('download_encrypted_pdf/<int:article_id>/', views.download_encrypted_pdf, name='download_encrypted_pdf'),
     path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
-                  path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics,
-                       name='create_reviewers_and_assign_topics'),
+    path('send/<int:article_id>/', send_article_view, name='send_article'),
+    path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
