@@ -46,9 +46,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for article in hakem.articles.all %}
+                            {% for article in assignment %}
                                 <tr class="text-center">
-                                    <td>{{ article.title }}</td>
+                                    <td>{{ article.article.title }}</td>
                                     <td>
                                         <span class="badge bg-info">{{ article.status }}</span>
                                     </td>

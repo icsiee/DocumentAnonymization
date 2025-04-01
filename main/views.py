@@ -723,10 +723,11 @@ def hakem_page(request, hakem_username):
 
     # Hakemin atanan konuları
     reviewer_subtopics = ReviewerSubtopic.objects.filter(reviewer=reviewer)
-
+    assignment= Assignment.objects.filter(reviewer=reviewer)
     return render(request, 'hakem_page.html', {
         'reviewer': reviewer,
         'reviewer_subtopics': reviewer_subtopics,
+        'assignment': assignment,
     })
 
 
@@ -872,11 +873,11 @@ def send_article_view(request, article_id):
         # Makale detaylarını al
         article = get_object_or_404(Article, id=article_id)
         subtopic = article.subtopic
-        print(subtopic)
+
         subtopic_model = Subtopic.objects.filter(name=subtopic).first()
 
         reviwer = ReviewerSubtopic.objects.filter(subtopic=subtopic_model).first()
-        print(reviwer)
+
 
 
 
@@ -892,4 +893,42 @@ def send_article_view(request, article_id):
     except Exception as e:
         return HttpResponse(f"<h1>Bir hata oluştu: {e}</h1>")
 
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from .models import Article, ReviewerSubtopic, Assignment
+from django.contrib.auth.decorators import login_required
+
+def assign_reviewer(request, article_id, reviewer_id):
+    """
+    Belirli bir hakemi belirli bir makaleye atayan fonksiyon.
+    """
+    print(reviewer_id)
+    print("123")
+    article = get_object_or_404(Article, id=article_id)
+    reviewer_subtopic = get_object_or_404(ReviewerSubtopic, id=reviewer_id)
+    reviewer=get_object_or_404(User, id=reviewer_subtopic.reviewer.id)
+    editor = get_object_or_404(User, user_type='Editör')
+
+    # Hakem zaten atanmışsa tekrar atamayı engelle
+    if Assignment.objects.filter(article=article, reviewer=reviewer).exists():
+        messages.warning(request, "Bu hakem zaten bu makaleye atanmış.")
+    else:
+        Assignment.objects.create(article=article, reviewer=reviewer, editor=editor)
+        messages.success(request, f"{reviewer.username} hakemi başarıyla atandı!")
+
+    return redirect('send_article', article_id=article.id)
+
+@login_required
+def reviewer_dashboard(request):
+    """
+    Giriş yapan hakeme atanmış makaleleri listeleyen fonksiyon.
+    """
+    reviewer = get_object_or_404(ReviewerSubtopic, reviewer=request.user)
+    assigned_articles = Assignment.objects.filter(reviewer=reviewer).select_related('article')
+
+    context = {
+        'assigned_articles': assigned_articles
+    }
+    return render(request, 'reviewer_dashboard.html', context)
 

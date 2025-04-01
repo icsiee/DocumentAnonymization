@@ -27,7 +27,9 @@ urlpatterns = [
     path('download_encrypted_pdf/<int:article_id>/', views.download_encrypted_pdf, name='download_encrypted_pdf'),
     path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
     path('send/<int:article_id>/', send_article_view, name='send_article'),
+    path('assign_reviewer/<int:article_id>/<int:reviewer_id>/', views.assign_reviewer, name='assign_reviewer'),
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
+
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
