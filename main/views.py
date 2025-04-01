@@ -950,3 +950,29 @@ def reviewer_dashboard(request):
     }
     return render(request, 'reviewer_dashboard.html', context)
 
+
+from django.http import Http404, FileResponse
+from django.shortcuts import get_object_or_404
+import os
+from django.conf import settings
+
+def pdf_indir(request, tracking_number):
+    # Makaleyi tracking_number ile al
+    article = get_object_or_404(Article, tracking_number=tracking_number)
+
+    # Eğer makale şifreliyse, şifreli versiyonu indirilecek
+    if article.is_encrypted:
+        file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+    else:
+        file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
+
+    # Dosya var mı kontrol et
+    if not os.path.exists(file_path):
+        raise Http404("İstenen dosya bulunamadı!")
+
+    # PDF dosyasını indirme için sun
+    response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{article.tracking_number}.pdf"'
+
+    return response
+

@@ -111,6 +111,10 @@
         🔒 Makale Şifrele
     {% endif %}
 </button>
+                                            <!-- İndir Butonu -->
+    <a href="{% url 'pdf_indir' article.tracking_number %}" class="btn btn-sm btn-primary">
+        ⬇️ İndir
+    </a>
                                                                             <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
 
 
