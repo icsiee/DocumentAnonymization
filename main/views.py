@@ -976,3 +976,22 @@ def pdf_indir(request, tracking_number):
 
     return response
 
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+import os
+from django.conf import settings
+from .models import Article
+
+def makale_sil(request, article_id):
+    if request.method == "POST":
+        article = get_object_or_404(Article, id=article_id)
+
+        # Makaleyi veritabanından sil
+        article.delete()
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Geçersiz istek"}, status=400)
+

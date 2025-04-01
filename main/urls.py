@@ -31,6 +31,7 @@ urlpatterns = [
     path('assign_reviewer/<int:article_id>/<int:reviewer_id>/', views.assign_reviewer, name='assign_reviewer'),
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
                   path('indir/<str:tracking_number>/', pdf_indir, name='pdf_indir'),
+                  path('makale_sil/<int:article_id>/', makale_sil, name='makale_sil'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -73,6 +73,8 @@
                                         <th>Şifreli mi?</th>
 
                                         <th>İşlemler</th>
+                                        <th>Sil</th>
+
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -125,6 +127,13 @@
                                                 </div>
                                             </div>
                                         </td>
+                                        <td>
+    <!-- Sil Butonu -->
+    <button class="btn btn-sm btn-danger deleteBtn" data-article-id="{{ article.id }}">
+        🗑️ Sil
+    </button>
+</td>
+
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -265,7 +274,51 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-       </script>
+
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".deleteBtn").forEach(button => {
+            button.addEventListener("click", function() {
+                let articleId = this.getAttribute("data-article-id");
+
+                if (confirm("Bu makaleyi silmek istediğinize emin misiniz?")) {
+                    fetch(`/makale_sil/${articleId}/`, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken")
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("Makale başarıyla silindi.");
+                            location.reload();  // Sayfayı yenileyerek listeyi güncelle
+                        } else {
+                            alert("Hata oluştu: " + data.error);
+                        }
+                    })
+                    .catch(error => console.error("Silme hatası:", error));
+                }
+            });
+        });
+
+        // CSRF token alma fonksiyonu
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                document.cookie.split(';').forEach(cookie => {
+                    let trimmedCookie = cookie.trim();
+                    if (trimmedCookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(trimmedCookie.split('=')[1]);
+                    }
+                });
+            }
+            return cookieValue;
+        }
+    });
+</script>
+
 
 </body>
 </html>
