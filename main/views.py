@@ -823,59 +823,7 @@ def encrypt_article(request, article_id):
     })
 
 
-from django.http import FileResponse, Http404
-import os
-from django.conf import settings
-from .models import Article
 
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse
-import os
-from django.conf import settings
-from .models import Article
-
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, HttpResponse
-import os
-from django.conf import settings
-from .models import Article
-
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, HttpResponse
-import os
-from django.conf import settings
-from .models import Article
-
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, Http404
-import os
-from django.conf import settings
-
-# views.py
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, Http404
-import os
-from django.conf import settings
-from .models import Article  # Article modelini import et
-
-# views.py
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, Http404
-import os
-from django.conf import settings
-from .models import Article  # Article modelini import et
-
-# views.py
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, Http404
-import os
-from django.conf import settings
-from .models import Article  # Article modelini import et
-
-
-from django.http import Http404, FileResponse
-from django.shortcuts import get_object_or_404
-import os
 from django.conf import settings
 
 from django.http import Http404, FileResponse
@@ -887,8 +835,13 @@ def pdf_goruntule(request, tracking_number):
     # Article'ı tracking_number ile al
     article = get_object_or_404(Article, tracking_number=tracking_number)
 
-    # Dosya yolunu oluştur
-    file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
+    # Şifreli dosya kontrolü
+    if article.is_encrypted:
+        # Şifreli makale için dosya yolu
+        file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+    else:
+        # Normal dosya yolu
+        file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
 
     # Dosya var mı kontrol et
     if not os.path.exists(file_path):
