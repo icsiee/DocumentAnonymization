@@ -161,7 +161,6 @@ class Review(models.Model):
 # Editör Atamaları Modeli
 class Assignment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    editor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assigned_articles", limit_choices_to={'user_type': 'Editör'})
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assigned_reviews", limit_choices_to={'user_type': 'Hakem'})
     assignment_date = models.DateTimeField(auto_now_add=True)
 

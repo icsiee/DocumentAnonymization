@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ article.title }}</title>
     {% load static %}
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Özel CSS -->
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
 </head>
 <body class="bg-light">
 
@@ -19,40 +14,45 @@
         <div class="container">
             <a class="navbar-brand" href="#">📄 Makale Detayları</a>
             <div class="navbar-nav">
-                <a class="nav-link" href="">Geri Dön</a>
+                <a class="nav-link" href="{% url 'editor_page' %}">Geri Dön</a>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <!-- Makale Başlığı ve İçeriği -->
-        <div class="card shadow-lg mb-4">
-            <div class="card-body">
-                <h1 class="card-title text-primary">{{ article.title }}</h1>
-                <p class="card-text">{{ article.content }}</p>
-            </div>
-        </div>
+    <div class="card shadow-lg mt-3">
+    <div class="card-body">
+        <h3 class="card-title text-success">📂 Makale Alt Başlıkları</h3>
+        <ul class="list-group">
+            {% for subtopic in article.articlesubtopic_set.all %}
+                <li class="list-group-item">{{ subtopic.subtopic.name }}</li>
+            {% empty %}
+                <li class="list-group-item text-danger">Alt başlık bulunamadı.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 
-        <!-- Atanan Hakemler -->
-        <div class="card shadow-lg">
-            <div class="card-body">
-                <h3 class="card-title text-success">👨‍⚖️ Atanabilecek Hakemler</h3>
-                <ul class="list-group">
 
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ reviewer.reviewer.username }}
-                            <form method="post" action="{% url 'assign_reviewer' article.id reviewer.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
-                            </form>
-                        </li>
-
-                </ul>
-            </div>
+    <div class="card shadow-lg mt-3">
+        <div class="card-body">
+            <h3 class="card-title text-success">👨‍⚖️ Atanabilecek Hakemler</h3>
+            <ul class="list-group">
+                {% for reviewer in valid_reviewers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ reviewer.username }}
+                        <form method="post" action="{% url 'send_article' article.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="reviewer_id" value="{{ reviewer.id }}">
+                            <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
+                        </form>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-danger">Bu makaleye uygun hakem bulunamadı.</li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>

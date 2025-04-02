@@ -880,27 +880,67 @@ from django.http import HttpResponse
 from django.contrib import messages
 from .models import Article, ReviewerSubtopic, User  # Modelleri kendi yapına göre güncelle
 
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+from .models import Article, ArticleSubtopic, ReviewerSubtopic, Subtopic
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from .models import Article, ArticleSubtopic, ReviewerSubtopic, Assignment, User
+
+
 def send_article_view(request, article_id):
     try:
-        # Makale detaylarını al
         article = get_object_or_404(Article, id=article_id)
-        subtopic = article.subtopic
 
-        subtopic_model = Subtopic.objects.filter(name=subtopic).first()
+        # Eğer makale zaten atanmışsa, tekrar atamaya izin verme
+        if Assignment.objects.filter(article=article).exists():
+            return HttpResponse("<h1>Bu makale zaten bir hakeme atanmış.</h1>")
 
-        reviwer = ReviewerSubtopic.objects.filter(subtopic=subtopic_model).first()
+        # Makale ile ilişkili alt başlıkları al
+        article_subtopics = ArticleSubtopic.objects.filter(article=article).values_list("subtopic", flat=True)
 
+        # Hakemlerin listesine ulaş
+        reviewers = User.objects.filter(user_type="Hakem")
 
+        # Gönderilecek uygun hakemleri filtrele
+        valid_reviewers = []
+        for reviewer in reviewers:
+            if ReviewerSubtopic.objects.filter(reviewer=reviewer, subtopic__in=article_subtopics).exists():
+                valid_reviewers.append(reviewer)
 
+        # Eğer uygun hakem varsa, bu hakemleri listele
+        if not valid_reviewers:
+            return HttpResponse("<h1>Bu makale için uygun hakem bulunamadı.</h1>")
 
+        if request.method == "POST":
+            reviewer_id = request.POST.get('reviewer_id')
+            reviewer = get_object_or_404(User, id=reviewer_id, user_type="Hakem")
 
-        context = {
-            "article": article,
-            "reviewer": reviwer,
+            # Atama işlemini gerçekleştir
+            Assignment.objects.create(article=article, reviewer=reviewer)
 
-        }
-        return render(request, "article_detail.html", context)
+            # Makale durumunu "İncelemede" olarak güncelle
+            article.status = "İncelemede"
+            article.save()
 
+            # Log kaydını oluştur
+            Log.objects.create(
+                user=article.author,  # Makalenin yazarı (author) işlemi gerçekleştiren kullanıcıdır
+                action=f"{article.title} makalesini {reviewer.username} adlı hakeme atama işlemi.",
+                log_type='Bilgilendirme'
+            )
+
+            # Başarı mesajı gönder
+            messages.success(request, f"{article.title} makalesi başarıyla {reviewer.username} adlı hakeme atandı.")
+
+            return redirect("editor_page")  # Hakem atandıktan sonra editör sayfasına yönlendirme
+
+        return render(request, 'article_detail.html', {
+            'article': article,
+            'valid_reviewers': valid_reviewers
+        })
 
     except Exception as e:
         return HttpResponse(f"<h1>Bir hata oluştu: {e}</h1>")

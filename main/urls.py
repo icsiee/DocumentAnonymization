@@ -24,7 +24,7 @@ urlpatterns = [
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics,
                        name='create_reviewers_and_assign_topics'),
     path('makale/pdf/<int:tracking_number>/', views.pdf_goruntule, name='pdf_goruntule'),
-    path('send/<int:article_id>/', send_article_view, name='send_article'),
+    path('send/<int:article_id>/', views.send_article_view, name='send_article'),
     path('assign_reviewer/<int:article_id>/<int:reviewer_id>/', views.assign_reviewer, name='assign_reviewer'),
     path('log_panel/', views.log_panel, name='log_panel'),
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
