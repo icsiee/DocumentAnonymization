@@ -914,6 +914,10 @@ def send_article_view(request, article_id):
     try:
         article = get_object_or_404(Article, id=article_id)
 
+        # Eğer makale şifrelenmemişse, gönderme işlemini engelle
+        if not article.is_encrypted:
+            return HttpResponse("<h1>Bu makale şifrelenmediği için gönderme işlemi yapılamaz.</h1>")
+
         # Eğer makale zaten atanmışsa, tekrar atamaya izin verme
         if Assignment.objects.filter(article=article).exists():
             # Makale zaten atanmışsa, bildirim mesajı ekleyerek kullanıcıyı bilgilendir
@@ -1064,9 +1068,7 @@ def log_panel(request):
     # Logları template'e gönderin
     return render(request, 'editor.html', {'logs': logs})
 
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, Http404
-from django.conf import settings
+
 import os
 import os
 from django.conf import settings
