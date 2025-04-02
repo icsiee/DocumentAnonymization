@@ -1,4 +1,4 @@
-
+from . import apps
 from .forms import *
 
 from django.views.decorators.csrf import csrf_exempt
@@ -31,9 +31,8 @@ TOPIC_MAP = [
             ("Forensic Computing", "Cyber Security"),
         ]
 # Hakemler ve Konuların Oluşturulması
-import random
-from django.contrib import messages
-from .models import User, Subtopic, ReviewerSubtopic, Review
+
+from .models import *
 
 
 def create_reviewers_and_assign_topics(request):
@@ -103,8 +102,22 @@ def create_reviewers_and_assign_topics(request):
     return redirect("editor_page")
 
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 def editor_page(request):
-    """Editör sayfası işlemleri"""
+    """Editör sayfası işlemleri (Bu fonksiyon yalnızca bir defa çalışacaktır)"""
+
+    # Eğer daha önce atama yapıldıysa tekrar çalıştırma
+    if ReviewerSubtopic.objects.exists():
+        return render(request, 'editor.html', {
+            'editor_messages': Message.objects.filter(receiver__username='editör@gmail.com').order_by('-sent_date'),
+            'articles': Article.objects.all(),
+            'logs':Log.objects.all(),
+            'reviewers': User.objects.filter(user_type='Hakem'),
+            'reviewer_subtopics': ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').all()
+        })
 
     # 1️⃣ Editör, makaleler ve mesajları al
     articles = Article.objects.all()
@@ -115,24 +128,19 @@ def editor_page(request):
         defaults={"user_type": "Editör", "email": 'editör@gmail.com'}
     )
 
-    # Eğer editör yeni oluşturulmuşsa mesajlar boş olabilir
+    # Editör mesajlarını al
     editor_messages = Message.objects.filter(receiver=editor).order_by('-sent_date')
 
-    # 2️⃣ Hakemleri ve atanan konuları al
-    reviewers = User.objects.filter(user_type='Hakem')  # Hakemleri alıyoruz
-    reviewer_subtopics = ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').all()
-
-    # 3️⃣ Hakemleri oluştur
+    # 2️⃣ Hakemleri oluştur (13 hakem)
     reviewer_users = []
-    for i in range(1, 14):  # 13 hakem
+    for i in range(1, 14):
         reviewer, created = User.objects.get_or_create(
             username=f"hakem{i}",
             defaults={"user_type": "Hakem", "email": f"hakem{i}@gmail.com"}
         )
         reviewer_users.append(reviewer)
 
-    # 4️⃣ Konuları oluştur
-    subtopics = []
+    # 3️⃣ Alt başlıkları oluştur
     TOPIC_MAP = [
         ("Deep Learning", "Artificial Intelligence and Machine Learning"),
         ("Natural Language Processing", "Artificial Intelligence and Machine Learning"),
@@ -149,6 +157,7 @@ def editor_page(request):
         ("Forensic Computing", "Cyber Security"),
     ]
 
+    subtopics = []
     for subtopic_name, main_topic in TOPIC_MAP:
         subtopic, created = Subtopic.objects.get_or_create(
             name=subtopic_name,
@@ -156,36 +165,36 @@ def editor_page(request):
         )
         subtopics.append(subtopic)
 
-    # 5️⃣ Her hakeme sırasıyla bir konu ata
-    for i, reviewer in enumerate(reviewer_users):
-        subtopic = subtopics[i]  # İlk konuyu sırasıyla hakemlere ata
+    # 4️⃣ Her hakeme rastgele 2 veya 3 alt başlık ata
+    random.shuffle(subtopics)  # Konuları karıştır
+    assignments = {reviewer: [] for reviewer in reviewer_users}  # Hakem-atama sözlüğü
+
+    # Önce her alt başlık için en az bir hakem ata
+    for i, subtopic in enumerate(subtopics):
+        reviewer = reviewer_users[i % len(reviewer_users)]  # Dönerek sırayla atama yap
         ReviewerSubtopic.objects.get_or_create(reviewer=reviewer, subtopic=subtopic)
+        assignments[reviewer].append(subtopic)
 
-    # 6️⃣ Kalan konuları rastgele dağıt
-    all_assigned_subtopics = [subtopics[i] for i in range(13)]  # İlk başta atanmış konular
-    remaining_subtopics = [subtopic for subtopic in subtopics if subtopic not in all_assigned_subtopics]  # Kalan konular
-
+    # Hakemlere 2 veya 3 konu verilecek şekilde ek atamalar yap
     for reviewer in reviewer_users:
-        # Kalan konulardan rastgele birini ata
-        available_subtopics = [subtopic for subtopic in remaining_subtopics if subtopic not in all_assigned_subtopics]
-        if available_subtopics:  # Eğer boşta konu varsa
+        while len(assignments[reviewer]) < 2 or (len(assignments[reviewer]) < 3 and random.choice([True, False])):
+            available_subtopics = [s for s in subtopics if s not in assignments[reviewer]]
+            if not available_subtopics:
+                break  # Eğer atayacak başka konu kalmadıysa dur
             subtopic = random.choice(available_subtopics)
             ReviewerSubtopic.objects.get_or_create(reviewer=reviewer, subtopic=subtopic)
-            all_assigned_subtopics.append(subtopic)  # Bu konu artık atanmış olarak ekleniyor
+            assignments[reviewer].append(subtopic)
 
-    # 7️⃣ Başarılı mesajı gönder
+    # 5️⃣ Başarılı mesajı gönder
     messages.success(request, "Hakemler ve konular başarıyla oluşturuldu ve atandı!")
 
-    # 8️⃣ Veriyi render et
+    # 6️⃣ Atamaları veriye ekleyerek sayfayı render et
     return render(request, 'editor.html', {
         'editor_messages': editor_messages,
         'articles': articles,
-        'reviewers': reviewers,  # Hakemler burada gönderilecek
-        'reviewer_subtopics': reviewer_subtopics  # Hakemlerin atandığı konular burada gönderilecek
+        'reviewers': reviewer_users,
+        'reviewer_subtopics': ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').all()
     })
-
-
-
 
 
 # BERT Modeli ve Tokenizer Yükleme
@@ -235,6 +244,19 @@ def determine_article_topic_bert(article):
     print(f"Eşleşme bulundu: {article.subtopic} -> {article.topic}")
 
 
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import Log, Article
+from django.utils import timezone  # Zaman damgası eklemek için
+
+import os
+from django.conf import settings
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article, User
+from .utils import generate_tracking_number, pdf_to_text
+
+
 def makale_yukle(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -272,7 +294,7 @@ def makale_yukle(request):
             # PDF içeriğini çıkarıp TXT olarak kaydet
             extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
 
-            # 🔹 Makaleyi kaydet (başlangıçta bilinmiyor)
+            # Makaleyi kaydet (başlangıçta bilinmiyor)
             article = Article.objects.create(
                 title=title,
                 author=user,
@@ -283,8 +305,14 @@ def makale_yukle(request):
                 subtopic="Bilinmiyor"
             )
 
-            # 🔹 Konu belirleme işlemi burada çalıştırılır
+            # Konu belirleme işlemi burada çalıştırılır
             determine_article_topic_bert(article)
+
+            # 🔹 **Log kaydı ekleniyor**
+            Log.objects.create(
+                action=f"Makale Yüklendi: {title}",  # Log durumu (yüklenen makale başlığı ile birlikte)
+                user=user  # Makaleyi yükleyen kullanıcı
+            )
 
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
             return redirect('yazar_sayfasi')
@@ -293,7 +321,6 @@ def makale_yukle(request):
             messages.error(request, "Lütfen yalnızca PDF formatında dosya yükleyin!")
 
     return render(request, 'makalesistemi.html')
-
 
 import spacy
 
@@ -344,17 +371,10 @@ def makale_durum_sorgulama(request):
     })
 
 
-import random
-from collections import defaultdict
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-from django.contrib import messages
+
 from .models import Article, User, Message, ReviewerSubtopic, MainSubtopic
 
-from collections import defaultdict
-import random
-from django.shortcuts import render
-from django.contrib import messages
+
 from .models import Subtopic
 
 
@@ -408,10 +428,21 @@ def review_article(request, article_id):
 def delete_article(request, article_id):
     try:
         article = get_object_or_404(Article, id=article_id)
+        article_title = article.title  # Makale başlığını alıyoruz (log için)
+        editor = get_object_or_404(User, user_type='Editör')
+        # Makaleyi veritabanından sil
         article.delete()
+
+        # Log oluşturuluyor
+        Log.objects.create(
+            action=f"Makale Silindi: {article_title}",  # Log durumu (silinen makalenin adı ile birlikte)
+            user=editor  # Silme işlemini yapan kullanıcı
+        )
         return JsonResponse({"success": True})  # ✅ Silme başarılı
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})  # ❌ Hata varsa bildir
+
+
 
 # Mesaj gönderme
 def send_message(request):
@@ -446,16 +477,21 @@ import os
 import shutil
 
 
+import os
+import shutil
+from django.conf import settings
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from django.apps import apps
+from .models import Article
+
 def delete_all_articles(request):
     if request.method == "POST":
-        # 1️⃣ Tüm makaleleri veritabanından al
+        # 1️⃣ Tüm makaleleri sil
         articles = Article.objects.all()
-
         for article in articles:
-            # 2️⃣ Makale dosyasını sil
             if article.file:
                 article_file_path = os.path.join(settings.MEDIA_ROOT, article.file.name)
-
                 if os.path.exists(article_file_path):
                     try:
                         os.remove(article_file_path)
@@ -463,32 +499,35 @@ def delete_all_articles(request):
                     except Exception as e:
                         messages.error(request, f"Dosya silinirken hata oluştu: {str(e)}")
 
-            # 3️⃣ Makaleyi veritabanından sil
             article.delete()
 
-        # 4️⃣ Belirtilen klasörleri temizle
-        folders_to_clear = ['images', 'articles', 'text','encrypted_articles']  # Sadece klasör isimleri
-        for folder in folders_to_clear:
-            folder_path = os.path.join(settings.MEDIA_ROOT, folder)  # Tam yol oluştur
+        # 2️⃣ Tüm veritabanı tablolarını temizle
+        for model in apps.get_models():
+            model.objects.all().delete()  # Her tablodaki tüm verileri sil
 
-            if os.path.exists(folder_path):  # Klasör varsa işlemi yap
+        # 3️⃣ Belirtilen medya klasörlerini temizle
+        folders_to_clear = ['images', 'articles', 'text', 'encrypted_articles']
+        for folder in folders_to_clear:
+            folder_path = os.path.join(settings.MEDIA_ROOT, folder)
+            if os.path.exists(folder_path):
                 try:
-                    # Tüm içeriği sil, ama klasörü değil
                     for filename in os.listdir(folder_path):
                         file_path = os.path.join(folder_path, filename)
                         if os.path.isfile(file_path) or os.path.islink(file_path):
-                            os.unlink(file_path)  # Dosya veya sembolik link sil
+                            os.unlink(file_path)
                         elif os.path.isdir(file_path):
-                            shutil.rmtree(file_path)  # Alt klasörü tamamen sil
+                            shutil.rmtree(file_path)
 
                     messages.success(request, f"{folder} klasörü başarıyla temizlendi.")
                 except Exception as e:
                     messages.error(request, f"{folder} klasörü temizlenirken hata oluştu: {str(e)}")
 
-        messages.success(request, "Tüm makaleler ve medya dosyaları başarıyla silindi.")
+        messages.success(request, "Tüm veritabanı kayıtları ve medya dosyaları başarıyla silindi.")
         return redirect('editor_page')  # Editör sayfasına yönlendir
 
     return render(request, 'editor_page.html')
+
+
 
 
 def extract_text_and_images_from_pdf(pdf_path):
@@ -912,11 +951,13 @@ def send_article_view(request, article_id):
         return HttpResponse(f"<h1>Bir hata oluştu: {e}</h1>")
 
 
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from .models import Article, ReviewerSubtopic, Assignment
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from .models import Log, Article, ReviewerSubtopic, User, Assignment
 
+@login_required
 def assign_reviewer(request, article_id, reviewer_id):
     """
     Belirli bir hakemi belirli bir makaleye atayan fonksiyon.
@@ -949,4 +990,70 @@ def reviewer_dashboard(request):
         'assigned_articles': assigned_articles
     }
     return render(request, 'reviewer_dashboard.html', context)
+
+
+from django.http import Http404, FileResponse
+from django.shortcuts import get_object_or_404
+import os
+from django.conf import settings
+
+def pdf_indir(request, tracking_number):
+    # Makaleyi tracking_number ile al
+    article = get_object_or_404(Article, tracking_number=tracking_number)
+
+    # Eğer makale şifreliyse, şifreli versiyonu indirilecek
+    if article.is_encrypted:
+        file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+    else:
+        file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
+
+    # Dosya var mı kontrol et
+    if not os.path.exists(file_path):
+        raise Http404("İstenen dosya bulunamadı!")
+
+    # PDF dosyasını indirme için sun
+    response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{article.tracking_number}.pdf"'
+
+    return response
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Log, Article
+
+@login_required
+def makale_sil(request, article_id):
+    if request.method == "POST":
+        article = get_object_or_404(Article, id=article_id)
+        article_title = article.title  # Makale başlığını alıyoruz (log için)
+        print(article)
+        # Makaleyi veritabanından sil
+        article.delete()
+
+        # Log oluşturuluyor
+        Log.objects.create(
+            action=f"Makale Silindi: {article_title}",  # Log durumu (silinen makalenin adı ile birlikte)
+            user=request.user  # Silme işlemini yapan kullanıcı
+        )
+        print(request.user)
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Geçersiz istek"}, status=400)
+
+from django.shortcuts import render
+from django.utils.timezone import now
+from .models import Log  # Log modelinizi import edin
+
+
+# Logları görüntülemek için view fonksiyonu
+def log_panel(request):
+    # Logları zaman sırasına göre sıralayın
+    logs = Log.objects.all().order_by('-action_date')  # Yeni loglar en üstte olacak
+
+    # Logları template'e gönderin
+    return render(request, 'editor.html', {'logs': logs})
 

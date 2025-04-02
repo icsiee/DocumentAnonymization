@@ -93,7 +93,7 @@ class Article(models.Model):
         self.is_encrypted = bool(self.encrypted_content)  # 🔹 Şifreleme durumunu güncelle
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def _str_(self):
         return self.title
 
     def generate_tracking_number(self):
@@ -135,7 +135,7 @@ class MainSubtopic(models.Model):
     main_topic = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.main_topic} - {self.name}"
 
 
@@ -145,7 +145,7 @@ class ArticleImage(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to='images/')
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.article.title} - {self.image.name}"
 
 
@@ -156,7 +156,7 @@ class Review(models.Model):
     review_text = models.TextField()
     review_date = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def _str_(self):
         return f"Review for {self.article.title} by {self.reviewer.username}"
 
 
@@ -167,7 +167,7 @@ class Assignment(models.Model):
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assigned_reviews", limit_choices_to={'user_type': 'Hakem'})
     assignment_date = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def _str_(self):
         return f"Editor {self.editor.username} assigned {self.article.title} to {self.reviewer.username}"
 
 # Mesajlar Modeli (Yazar ve Editör Arasındaki İletişim)
@@ -177,7 +177,7 @@ class Message(models.Model):
     message_text = models.TextField()
     sent_date = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def _str_(self):
         return f"Message from {self.sender.username} to {self.receiver.username}"
 
 # Makale Versiyonları (Revizyon Takibi İçin)
@@ -190,7 +190,7 @@ class ArticleVersion(models.Model):
     class Meta:
         unique_together = ('article', 'version_number')
 
-    def _str_(self):
+    def str(self):
         return f"{self.article.title} - Version {self.version_number}"
 
 # Loglama (Kullanıcı İşlemlerini Kaydetmek İçin)
@@ -198,8 +198,9 @@ class Log(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     action = models.CharField(max_length=255)
     action_date = models.DateTimeField(auto_now_add=True)
+    log_type = models.CharField(max_length=20, default='Bilgilendirme')  # Log türü (her zaman "Bilgilendirme")
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.user.username} - {self.action}"
 
 
@@ -210,14 +211,14 @@ class EditorMessage(models.Model):
     content = models.TextField()  # Mesaj içeriği
     sent_at = models.DateTimeField(auto_now_add=True)  # Mesajın gönderildiği zaman
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.sender_email} - {self.sent_at}"
 
 class Subtopic(models.Model):
     name = models.CharField(max_length=255, unique=True)
     main_topic = models.CharField(max_length=255)  # Ana başlık: Yapay Zeka, Büyük Veri, Siber Güvenlik gibi
 
-    def __str__(self):
+    def _str_(self):
         return self.name
 
 
@@ -225,6 +226,5 @@ class ReviewerSubtopic(models.Model):
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Hakem'})
     subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
 
-    def __str__(self):
+    def _str_(self):
         return f"{self.reviewer.username} - {self.subtopic.name}"
-
