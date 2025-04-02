@@ -232,6 +232,43 @@ def determine_article_topics_bert(article):
 
     return matched_subtopics
 
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+import os
+from django.core.exceptions import ObjectDoesNotExist
+
+def encrypt_pdf(file_path, key):
+    """
+    PDF dosyasını AES ile şifreler.
+    """
+    # Dosya açılır ve içerik okunur
+    with open(file_path, 'rb') as f:
+        data = f.read()
+
+    # AES için 16 baytlık bir iv (Initialization Vector) oluşturuluyor
+    iv = os.urandom(16)
+
+    # Veriyi AES ile şifreleme
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    # Veri padding işlemi
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_data = padder.update(data) + padder.finalize()
+
+    # Şifreli veri ve IV dosyaya yazılır
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+
+    encrypted_file_path = file_path + '.enc'
+    with open(encrypted_file_path, 'wb') as f:
+        f.write(iv + encrypted_data)  # IV ve şifreli veri birlikte kaydedilir
+
+    return encrypted_file_path
+
+
+from .utils import *
+
 def makale_yukle(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -255,9 +292,11 @@ def makale_yukle(request):
             pdf_filename = f"{tracking_number}.pdf"
             txt_filename = f"{tracking_number}.txt"
 
+            # Yolu doğru bir şekilde oluştur
             pdf_path = os.path.join(settings.MEDIA_ROOT, 'articles', pdf_filename)
             txt_path = os.path.join(settings.MEDIA_ROOT, 'text', txt_filename)
 
+            # Dosyayı kaydet
             with open(pdf_path, 'wb') as destination:
                 for chunk in makale.chunks():
                     destination.write(chunk)
@@ -265,7 +304,7 @@ def makale_yukle(request):
             # PDF içeriğini çıkarıp TXT olarak kaydet
             extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
 
-            # Makaleyi kaydet (başlangıçta bilinmiyor)
+            # Makaleyi kaydet
             article = Article.objects.create(
                 title=title,
                 author=user,
@@ -274,15 +313,15 @@ def makale_yukle(request):
                 content=extracted_text
             )
 
-            # 🔹 Makale ile eşleşen alt başlıkları kaydet
+            # Alt başlıkları kaydet
             matched_subtopics = determine_article_topics_bert(article)
             for subtopic in matched_subtopics:
                 ArticleSubtopic.objects.get_or_create(article=article, subtopic=subtopic)
 
-            # 🔹 **Log kaydı ekleniyor**
+            # Log kaydı ekle
             Log.objects.create(
-                action=f"Makale Yüklendi: {title}",  # Log durumu (yüklenen makale başlığı ile birlikte)
-                user=user  # Makaleyi yükleyen kullanıcı
+                action=f"Makale Yüklendi: {title}",
+                user=user
             )
 
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
@@ -776,20 +815,9 @@ import re
 import fitz  # PyMuPDF
 
 
-
-
-from django.shortcuts import redirect
-from django.contrib import messages
 from .utils import process_and_save_pdf
 
-from django.http import JsonResponse
-from .models import Article
 
-from django.shortcuts import get_object_or_404
-
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Article
 
 def encrypt_article(request, article_id):
     """Makale PDF'sini şifreleyerek veya şifreyi kaldırarak günceller."""
@@ -871,28 +899,16 @@ def download_encrypted_pdf(request, article_id):
 
 
 import random
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-from .models import Article, ReviewerSubtopic, User  # Modelleri kendi yapına göre güncelle
 
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
 from .models import Article, ArticleSubtopic, ReviewerSubtopic, Subtopic
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from .models import Article, ArticleSubtopic, ReviewerSubtopic, Assignment, User
-
-
-from django.contrib import messages
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
 from .models import Article, Assignment, User, ArticleSubtopic, ReviewerSubtopic, Log
 from django.http import HttpResponse
 
+
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
 
 def send_article_view(request, article_id):
     try:
@@ -900,7 +916,10 @@ def send_article_view(request, article_id):
 
         # Eğer makale zaten atanmışsa, tekrar atamaya izin verme
         if Assignment.objects.filter(article=article).exists():
-            return HttpResponse("<h1>Bu makale zaten bir hakeme atanmış.</h1>")
+            # Makale zaten atanmışsa, bildirim mesajı ekleyerek kullanıcıyı bilgilendir
+            assigned_reviewer = Assignment.objects.get(article=article).reviewer
+            messages.success(request, f"{article.title} makalesi zaten {assigned_reviewer.username} adlı hakeme atanmış.")
+            return redirect("editor_page")  # Editör sayfasına yönlendirme
 
         # Makale ile ilişkili alt başlıkları al
         article_subtopics = ArticleSubtopic.objects.filter(article=article).values_list("subtopic", flat=True)
@@ -1044,3 +1063,32 @@ def log_panel(request):
 
     # Logları template'e gönderin
     return render(request, 'editor.html', {'logs': logs})
+
+from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+from django.conf import settings
+import os
+import os
+from django.conf import settings
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+from .models import Article
+
+def pdf_goruntule_hakem(request, tracking_number):
+    # Article'ı tracking_number ile al
+    article = get_object_or_404(Article, tracking_number=tracking_number)
+
+    # Hakemler yalnızca sansürlü makaleyi görebilir
+    file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+
+    # Dosya var mı kontrol et
+    if not os.path.exists(file_path):
+        raise Http404("Sansürlü makale bulunamadı.")
+
+    # PDF'yi tarayıcıda açılması için "inline" olarak döndür
+    response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{article.tracking_number}_censored.pdf"'
+
+    return response
+
+

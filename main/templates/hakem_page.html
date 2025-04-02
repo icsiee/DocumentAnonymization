@@ -24,46 +24,48 @@
 
         <!-- Hakem Bilgisi ve Atanan Konular -->
         <div class="card shadow-lg mt-4">
-    <div class="card-body">
-        <h3 class="card-title text-primary">Hakem: {{ reviewer.username }}</h3>
-        <h5>Atanan Alt Konular:</h5>
-        <ul>
-            {% for reviewer_subtopic in reviewer_subtopics %}
-                <li>{{ reviewer_subtopic.subtopic.name }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
-
-                <h5 class="text-primary mt-4">Atanan Makaleler:</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-dark text-center">
-                            <tr>
-                                <th>Makale Başlığı</th>
-                                <th>Durum</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for article in assignment %}
-                                <tr class="text-center">
-                                    <td>{{ article.article.title }}</td>
-                                    <td>
-                                        <span class="badge bg-info">İncelemede</span>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="2" class="text-center">Bu hakeme atanan makale bulunmamaktadır.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card-body">
+                <h3 class="card-title text-primary">Hakem: {{ reviewer.username }}</h3>
+                <h5>Atanan Alt Konular:</h5>
+                <ul>
+                    {% for reviewer_subtopic in reviewer_subtopics %}
+                        <li>{{ reviewer_subtopic.subtopic.name }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
 
+        <!-- Atanan Makaleler -->
+        <h5 class="text-primary mt-4">Atanan Makaleler:</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Makale Başlığı</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in assignment %}
+                        <tr class="text-center">
+                           <td>
+                                <a href="{% url 'pdf_goruntule_hakem' article.article.tracking_number %}" target="_blank">
+    {{ article.article.title }}
+</a>
+
+                            </td>
+                            <td>
+                                <span class="badge bg-info">İncelemede</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">Bu hakeme atanan makale bulunmamaktadır.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Bootstrap JS -->

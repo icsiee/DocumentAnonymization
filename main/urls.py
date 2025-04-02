@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import pdf_goruntule_hakem  # Görüntüleme fonksiyonunu içe aktar
 
 from .views import *
 
@@ -30,6 +31,7 @@ urlpatterns = [
     path('create_reviewers_and_assign_topics/', views.create_reviewers_and_assign_topics, name='create_reviewers_and_assign_topics'),
                   path('indir/<str:tracking_number>/', pdf_indir, name='pdf_indir'),
                   path('makale_sil/<int:article_id>/', makale_sil, name='makale_sil'),
+                  path('makale/sifreli/<str:tracking_number>/', pdf_goruntule_hakem, name='pdf_goruntule_hakem'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

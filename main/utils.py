@@ -96,87 +96,11 @@ def generate_pdf_with_images_and_text(text, images, output_path):
     c.save()
 
 
-
-
-import fitz  # PyMuPDF
-import os
-import re
-import spacy
-from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect
 from .models import Article  # Makale modeli
 
-import fitz  # PyMuPDF
-import os
-import re
-import spacy
-from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect
-from .models import Article  # Makale modeli
 
-# SpaCy'nin büyük modelini yükle
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
 from django.conf import settings
 
-# SpaCy dil modelini yükleyelim
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-# SpaCy dil modelini yükleyelim
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-# SpaCy dil modelini yükleyelim
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-# SpaCy dil modelini yükleyelim
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-import re
-import os
-import spacy
-import fitz  # PyMuPDF
-from django.conf import settings
-
-import re
-import spacy
-import os
-import fitz  # PyMuPDF
-
-# SpaCy dil modelini yükleyelim
 import re
 import spacy
 import os
@@ -208,12 +132,22 @@ def extract_person_info(text):
             if not any(word in ent.text for word in ["Network", "Computer", "IEEE", "Department", "Engineering"]):
                 institutions.add(ent.text)
 
-    return persons, institutions, emails, pre_abstract_text
+    # Kişisel bilgileri şifreleyin (isteğe bağlı)
+    encrypted_persons = {person: encrypt_data(person) for person in persons}
+    encrypted_institutions = {institution: encrypt_data(institution) for institution in institutions}
+    encrypted_emails = {email: encrypt_data(email) for email in emails}
+
+    return encrypted_persons, encrypted_institutions, encrypted_emails, pre_abstract_text
 
 
+
+import fitz  # PyMuPDF
+import re
+import os
+from django.conf import settings
 
 def process_and_save_pdf(article):
-    """PDF üzerindeki yazar bilgilerini tespit edip sansürleyerek kaydeder."""
+    """PDF üzerindeki yazar bilgilerini tespit edip şifreleyerek kaydeder."""
     original_pdf_path = article.file.path
     doc = fitz.open(original_pdf_path)
 
@@ -221,43 +155,31 @@ def process_and_save_pdf(article):
     first_page_text = doc[0].get_text("text")
     persons, institutions, emails, pre_abstract_text = extract_person_info(first_page_text)
 
-    # E-posta adreslerinden isim tespit et ve abstract metniyle karşılaştır
-    for email in emails:
-        name_from_email = get_name_from_email(email)
-        if name_from_email and name_from_email.lower() in pre_abstract_text.lower():
-            persons.add(name_from_email)  # Abstract kısmındaki isim ile eşleşen ismi sansür listesine ekle
+    # Tüm sansürlenecek kelimeleri birleştiriyoruz
+    sensitive_info_set = persons | institutions | emails
 
-    # Abstract kısmından önceki tüm kişi isimlerini sansürleme listesine ekle
-    all_person_names = extract_person_names_from_text(pre_abstract_text)
-    persons.update(all_person_names)
-
-    # Sansürlü PDF'yi kaydetmek için yeni klasör oluştur
     encrypted_folder = os.path.join(settings.MEDIA_ROOT, "encrypted_articles")
     os.makedirs(encrypted_folder, exist_ok=True)
-
     censored_pdf_path = os.path.join(encrypted_folder, f"{article.tracking_number}_censored.pdf")
 
-    # İlk 5 satırı atla ve sansürle
     for page in doc:
         text = page.get_text("text")
-        lines = text.split("\n")
 
-        # İlk 5 satırı atla
-        lines_to_process = lines[5:]
-
-        # İşlenecek metni birleştir
-        text_to_process = "\n".join(lines_to_process)
-
-        # Sadece tespit edilen kişi isimleri, kurumları ve e-posta adreslerini sansürle
-        for sensitive_info in persons | institutions | emails:
+        for sensitive_info in sensitive_info_set:
+            encrypted_info = encrypt_data(sensitive_info.encode('utf-8'))  # Şifrelenmiş veri
+            regex = re.compile(re.escape(sensitive_info), re.IGNORECASE)
             areas = page.search_for(sensitive_info)
-            for rect in areas:
-                page.add_redact_annot(rect, fill=(0, 0, 0))  # Siyah renk ile sansürle
 
-        page.apply_redactions()
+            if areas:  # Eğer eşleşme bulunduysa
+                for rect in areas:
+                    page.add_redact_annot(rect, fill=(0, 0, 0))  # Siyah sansür ekle
+                page.add_text_annot(areas[0], encrypted_info)  # Şifrelenmiş metni ekle
+
+        page.apply_redactions()  # Redaksiyonları uygula
 
     doc.save(censored_pdf_path)
     return censored_pdf_path
+
 
 
 def get_name_from_email(email):
@@ -283,3 +205,43 @@ def extract_person_names_from_text(text):
             person_names.add(ent.text)
 
     return person_names
+
+
+from Crypto.Cipher import AES
+from base64 import b64encode, b64decode
+import os
+
+from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import PBKDF2
+from base64 import b64encode, b64decode
+import os
+
+# Sabit bir şifreleme anahtarı üretmek için PBKDF2 kullanıyoruz.
+SECRET_KEY = "my_secret_passphrase"  # Daha güvenli olması için çevresel değişkenlere taşınabilir
+SALT = b'\x12\x34\x56\x78\x90\xab\xcd\xef'  # Sabit bir salt
+
+key = PBKDF2(SECRET_KEY, SALT, dkLen=32)  # AES-256 için 32 byte key üretimi
+
+
+def encrypt_data(data):
+    """Veriyi AES ile şifreler ve Base64 olarak döndürür."""
+    if isinstance(data, str):
+        data = data.encode('utf-8')  # Eğer `str` ise `bytes`'a çevir
+    elif isinstance(data, bytes):
+        pass  # Zaten `bytes`, ek bir işlem yapmaya gerek yok
+
+    cipher = AES.new(key, AES.MODE_EAX)
+    ciphertext, tag = cipher.encrypt_and_digest(data)
+    encrypted_data = cipher.nonce + tag + ciphertext
+    return b64encode(encrypted_data).decode('utf-8')
+
+
+def decrypt_data(encrypted_data):
+    """Şifreli veriyi çözerek orijinal haline döndürür."""
+    encrypted_data = b64decode(encrypted_data)
+    nonce = encrypted_data[:16]
+    tag = encrypted_data[16:32]
+    ciphertext = encrypted_data[32:]
+
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    return cipher.decrypt_and_verify(ciphertext, tag).decode('utf-8')

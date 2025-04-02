@@ -76,6 +76,11 @@ class Article(models.Model):
     encrypted_content = models.TextField(blank=True, null=True)
     is_encrypted = models.BooleanField(default=False)
 
+    def get_censored_pdf_url(self):
+        """Sansürlü makalenin URL'sini döndürür."""
+        file_path = f"/media/encrypted_articles/{self.tracking_number}_censored.pdf"
+        return file_path
+
     def encrypt_content(self):
         """Makale içeriğini şifrele"""
         key = settings.FERNET_KEY
