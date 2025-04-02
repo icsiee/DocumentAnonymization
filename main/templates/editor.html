@@ -68,6 +68,8 @@
                                         <th>Takip No</th>
                                         <th>Başlık</th>
                                         <th>Yazar</th>
+                                                <th>Alt Başlıklar</th> <!-- 🆕 Yeni Sütun -->
+
                                         <th>Durum</th>
                                         <th>Gönderim Tarihi</th>
                                         <th>Şifreli mi?</th>
@@ -87,9 +89,27 @@
 </td>
 
 
+
                                         <td>{{ article.title }}</td>
 
                                         <td>{{ article.author.username }}</td>
+
+                                          <!-- 🆕 Alt Başlıkları Listeleme -->
+        <td>
+            {% with article.articlesubtopic_set.all as subtopics %}
+                {% if subtopics %}
+                    <ul class="list-unstyled">
+                        {% for subtopic in subtopics %}
+                            <li>🔹 {{ subtopic.subtopic.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">Alt başlık atanmadı</span>
+                {% endif %}
+            {% endwith %}
+        </td>
+
+
                                         <td>
                                             <span class="badge bg-info">{{ article.get_status_display }}</span>
                                         </td>
@@ -282,7 +302,7 @@ function getCookie(name) {
                 let articleId = this.getAttribute("data-article-id");
 
                 if (confirm("Bu makaleyi silmek istediğinize emin misiniz?")) {
-                    fetch(`/makale_sil/${articleId}/`, {
+                    fetch(`/delete_article/${articleId}/`, {
                         method: "POST",
                         headers: {
                             "X-CSRFToken": getCookie("csrftoken")
@@ -290,6 +310,7 @@ function getCookie(name) {
                     })
                     .then(response => response.json())
                     .then(data => {
+                    console.log("Hata");
                         if (data.success) {
                             alert("Makale başarıyla silindi.");
                             location.reload();  // Sayfayı yenileyerek listeyi güncelle
@@ -317,6 +338,44 @@ function getCookie(name) {
         }
     });
 </script>
+
+<!-- ========================================= -->
+<!-- Loglama ve İzleme Paneli (YENİ EKLENEN KISIM) -->
+<!-- ========================================= -->
+<h2 class="mt-5">Loglama ve İzleme Paneli</h2>
+<p>Gerçekleşen tüm işlemler ve hata/uyarı/bilgilendirme logları aşağıda listelenir.</p>
+
+<div class="log-container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Log ID</th>
+                <th>Log Türü</th>
+                <th>Durum</th>
+                <th>İşlem Zamanı</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr class="log-row">
+                <td>{{ log.id }}</td>
+                <td>{{ log.log_type }}</td>
+                <td>{{ log.action }}</td>
+                <td>{{ log.action_date }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">Hiç log kaydı bulunamadı.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- ========================================= -->
+<!-- Loglama ve İzleme Paneli Bitişi -->
+<!-- ========================================= -->
+
+
 
 
 </body>

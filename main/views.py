@@ -114,6 +114,7 @@ def editor_page(request):
         return render(request, 'editor.html', {
             'editor_messages': Message.objects.filter(receiver__username='editör@gmail.com').order_by('-sent_date'),
             'articles': Article.objects.all(),
+            'logs':Log.objects.all(),
             'reviewers': User.objects.filter(user_type='Hakem'),
             'reviewer_subtopics': ReviewerSubtopic.objects.select_related('reviewer', 'subtopic').all()
         })
@@ -186,6 +187,7 @@ def editor_page(request):
 
     # 5️⃣ Başarılı mesajı gönder
     messages.success(request, "Hakemler ve konular başarıyla oluşturuldu ve atandı!")
+    articles = Article.objects.prefetch_related('articlesubtopic_set__subtopic').all()
 
     # 6️⃣ Atamaları veriye ekleyerek sayfayı render et
     return render(request, 'editor.html', {
@@ -241,6 +243,7 @@ def makale_yukle(request):
 
         if makale and makale.name.endswith('.pdf'):
             tracking_number = generate_tracking_number()
+
             pdf_filename = f"{tracking_number}.pdf"
             txt_filename = f"{tracking_number}.txt"
 
@@ -251,8 +254,10 @@ def makale_yukle(request):
                 for chunk in makale.chunks():
                     destination.write(chunk)
 
+            # PDF içeriğini çıkarıp TXT olarak kaydet
             extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
 
+            # Makaleyi kaydet (başlangıçta bilinmiyor)
             article = Article.objects.create(
                 title=title,
                 author=user,
@@ -266,6 +271,12 @@ def makale_yukle(request):
             for subtopic in matched_subtopics:
                 ArticleSubtopic.objects.get_or_create(article=article, subtopic=subtopic)
 
+            # 🔹 **Log kaydı ekleniyor**
+            Log.objects.create(
+                action=f"Makale Yüklendi: {title}",  # Log durumu (yüklenen makale başlığı ile birlikte)
+                user=user  # Makaleyi yükleyen kullanıcı
+            )
+
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
             return redirect('yazar_sayfasi')
 
@@ -273,6 +284,8 @@ def makale_yukle(request):
             messages.error(request, "Lütfen yalnızca PDF formatında dosya yükleyin!")
 
     return render(request, 'makalesistemi.html')
+
+
 import spacy
 
 # spaCy dil modeli yükleniyor
@@ -540,7 +553,6 @@ def submit_editor_message(request):
         form = EditorMessageForm()
     return render(request, 'submit_editor_message.html', {'form': form})
 
-
 # Editörün mesajları görmesi için
 def list_editor_messages(request):
     editor_messages = Message.objects.all().filter(receiver_id=request.user.id).order_by('-sent_date')
@@ -548,6 +560,26 @@ def list_editor_messages(request):
     return render(request, 'editor.html', {'editor_messages': editor_messages})
 
 
+def assign_reviewers_to_subtopics():
+    subtopics = list(Subtopic.objects.all())
+    reviewers = list(User.objects.filter(user_type='Hakem'))
+
+    if not reviewers:
+        return "Hiç hakem bulunamadı!"
+
+    random.shuffle(reviewers)  # Hakemleri karıştır
+
+    assignments = []
+    for subtopic in subtopics:
+        print(subtopic)
+        assigned_reviewer = random.choice(reviewers)  # Rastgele bir hakem seç
+        assignment, created = ReviewerSubtopic.objects.get_or_create(
+            reviewer=assigned_reviewer,
+            subtopic=subtopic
+        )
+        assignments.append(f"{assigned_reviewer.username} -> {subtopic.name}")
+
+    return assignments  # Atanan hakemleri liste olarak döndür
 
 def revize_et(request, article_id):
     # Makaleyi al
@@ -614,6 +646,11 @@ def revize_et(request, article_id):
 
 
 
+
+
+
+from django.http import Http404, FileResponse
+
 def pdf_goruntule(request, article_id):
     article = get_object_or_404(Article, id=article_id)
 
@@ -626,6 +663,14 @@ def pdf_goruntule(request, article_id):
         raise Http404("PDF dosyası bulunamadı.")
 
     return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
+
+@csrf_exempt
+def generate_random_reviewers(request):
+    if request.method == "POST":
+        result = assign_reviewers_to_subtopics()
+        return JsonResponse({"message": "Atama işlemi tamamlandı!", "details": result})
+
+    return JsonResponse({"error": "Geçersiz istek"}, status=400)
 
 
 from PIL import Image
@@ -655,6 +700,16 @@ def generate_pdf_with_images_and_text(text, images, output_path):
     # PDF'i kaydet
     c.save()
 
+import spacy
+from collections import Counter
+
+from django.shortcuts import render, get_object_or_404
+from .models import User, ReviewerSubtopic
+from collections import defaultdict
+
+from django.shortcuts import render, get_object_or_404
+from .models import User
+
 
 def hakem_page(request, hakem_username):
     """Hakem sayfası işlemleri"""
@@ -670,7 +725,40 @@ def hakem_page(request, hakem_username):
     })
 
 
+import spacy
 
+
+# Şifreleme için Fernet anahtarını oluşturun (Bu anahtar bir kez oluşturulup güvenli bir yerde saklanmalıdır)
+# Anahtarınızı güvenli bir şekilde saklayın (örneğin, çevresel değişkenlerde).
+from cryptography.fernet import Fernet
+from django.conf import settings
+
+from cryptography.fernet import Fernet
+
+# Anahtarı çevresel değişkenden al
+key = settings.FERNET_KEY.encode()  # Anahtarın byte formatına çevrilmesi gerekebilir
+cipher_suite = Fernet(key)
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Article
+
+
+def encrypt_word(word):
+    """Kelimeyi şifreler"""
+    key = settings.FERNET_KEY
+    cipher_suite = Fernet(key)
+    encrypted = cipher_suite.encrypt(word.encode())
+    return encrypted.decode()
+
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+from cryptography.fernet import Fernet
+
+
+# Şifrelenmiş makaleyi görüntüleme
 def view_encrypted_article(request, article_id):
     article = Article.objects.get(id=article_id)
 
@@ -683,6 +771,9 @@ def view_encrypted_article(request, article_id):
 
 
 from PIL import Image, ImageFilter
+
+from django.conf import settings
+from django.shortcuts import render, redirect
 
 import re
 
@@ -840,7 +931,7 @@ def assign_reviewer(request, article_id, reviewer_id):
 
     return redirect('send_article', article_id=article.id)
 
-@login_required
+
 def reviewer_dashboard(request):
     """
     Giriş yapan hakeme atanmış makaleleri listeleyen fonksiyon.
@@ -898,3 +989,12 @@ def makale_sil(request, article_id):
 
     return JsonResponse({"success": False, "error": "Geçersiz istek"}, status=400)
 
+# Logları görüntülemek için view fonksiyonu
+from .models import Log  # Log modelinizi import edin
+
+def log_panel(request):
+    # Logları zaman sırasına göre sıralayın
+    logs = Log.objects.all().order_by('-action_date')  # Yeni loglar en üstte olacak
+
+    # Logları template'e gönderin
+    return render(request, 'editor.html', {'logs': logs})

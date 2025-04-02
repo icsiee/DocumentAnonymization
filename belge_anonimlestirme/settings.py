@@ -92,9 +92,6 @@ DATABASES = {
         'PORT': '3306',
     }
 }
-import os
-
-# settings.py
 
 
 # FERNET_KEY çevresel değişkenini yükle
