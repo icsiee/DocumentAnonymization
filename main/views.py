@@ -850,17 +850,30 @@ from django.shortcuts import get_object_or_404
 import os
 from django.conf import settings
 
+from django.http import Http404, FileResponse
+import os
+from django.conf import settings
+from .models import Article
+
+from django.http import Http404, FileResponse
+import os
+from django.conf import settings
+from .models import Article
+
 def pdf_goruntule(request, tracking_number):
     # Article'ı tracking_number ile al
     article = get_object_or_404(Article, tracking_number=tracking_number)
 
-    # Şifreli dosya kontrolü
-    if article.is_encrypted:
-        # Şifreli makale için dosya yolu
-        file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+    # Makale durumu "Tamamlandı" ise güncellenmiş PDF'yi aç
+    if article.status == 'Tamamlandı':
+        # Makale tamamlandığı için sadece güncellenmiş PDF dosyasını açıyoruz
+        file_path = os.path.join(settings.MEDIA_ROOT, 'updated_articles', f"{article.tracking_number}_updated.pdf")
     else:
-        # Normal dosya yolu
-        file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
+        # Eğer makale "Tamamlanmadı"ysa şifreli ya da şifresiz dosyayı açıyoruz
+        if article.is_encrypted:
+            file_path = os.path.join(settings.MEDIA_ROOT, 'encrypted_articles', f"{article.tracking_number}_censored.pdf")
+        else:
+            file_path = os.path.join(settings.MEDIA_ROOT, 'articles', f"{article.tracking_number}.pdf")
 
     # Dosya var mı kontrol et
     if not os.path.exists(file_path):
@@ -876,7 +889,6 @@ def pdf_goruntule(request, tracking_number):
     response['Content-Type'] = 'application/pdf'
 
     return response
-
 
 
 import os

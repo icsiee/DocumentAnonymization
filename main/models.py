@@ -33,20 +33,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-import os
-import random
-import fitz  # PyMuPDF
-from django.db import models
-from django.conf import settings
-
-import os
-import random
-import fitz  # PyMuPDF
-from django.db import models
-from django.conf import settings
-from django.db import models
-from cryptography.fernet import Fernet
-from django.conf import settings
 
 from django.db import models
 from django.conf import settings
