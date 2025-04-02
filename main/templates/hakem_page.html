@@ -43,6 +43,8 @@
                     <tr>
                         <th>Makale Başlığı</th>
                         <th>Durum</th>
+                        <th>Değerlendirme ekle</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -57,6 +59,14 @@
                             <td>
                                 <span class="badge bg-info">İncelemede</span>
                             </td>
+                            <td>
+    <!-- Değerlendirme Ekle Butonu -->
+    <form method="post" action="{% url 'add_review' article.article.id %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary btn-sm">Değerlendirme Ekle</button>
+</form>
+
+</td>
                         </tr>
                     {% empty %}
                         <tr>

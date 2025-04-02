@@ -1093,4 +1093,89 @@ def pdf_goruntule_hakem(request, tracking_number):
 
     return response
 
+# views.py
 
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Article, Review
+from .forms import ReviewForm
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .forms import ReviewForm
+from .models import Article
+
+import fitz  # PyMuPDF
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+from .models import Article, Review
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Article, Review, Assignment
+import fitz  # PyMuPDF
+
+def review_article(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+
+    # Makaleye atanmış hakemi al
+    try:
+        assignment = Assignment.objects.get(article=article)
+        reviewer = assignment.reviewer
+    except Assignment.DoesNotExist:
+        reviewer = None  # Eğer makaleye atanmış hakem yoksa
+
+    # Yorum eklenmesi
+    if request.method == 'POST':
+        comment = request.POST.get('comment')
+        if comment:
+            # Yorum kaydetme
+            review = Review.objects.create(
+                article=article,
+                reviewer=reviewer,  # Yorum yapan hakem burada atanıyor
+                comment=comment
+            )
+
+            # Yorumları PDF'ye ekleyelim
+            add_comment_to_pdf(article, comment)
+
+            # Makale durumunu "Tamamlandı" olarak güncelle
+            article.status = 'Tamamlandı'
+            article.save()
+
+            # Yorum ekledikten sonra kullanıcıyı aynı sayfaya yönlendir
+            return render(request, 'review_article.html', {'article': article, 'review': review})
+
+    return render(request, 'review_article.html', {'article': article})
+
+
+import os
+from django.conf import settings
+import fitz  # PyMuPDF
+
+def add_comment_to_pdf(article, comment):
+    # PDF dosyasının kaydedileceği dizin
+    updated_articles_dir = os.path.join(settings.MEDIA_ROOT, 'updated_articles')
+
+    # Dizin yoksa, oluştur
+    if not os.path.exists(updated_articles_dir):
+        os.makedirs(updated_articles_dir)
+
+    # Makalenin PDF dosyasını aç
+    pdf_path = article.file.path  # Makalenin dosya yolu
+    doc = fitz.open(pdf_path)
+
+    # Son sayfayı al
+    page = doc[-1]
+
+    # Yorum metnini ekle
+    text = f"\n\nYorum: {comment}"
+
+    # Yorum ekleme
+    page.insert_text((50, page.rect.height - 100), text, fontsize=12)
+
+    # Yorum ekledikten sonra yeni PDF dosyasını kaydet
+    new_pdf_path = os.path.join(updated_articles_dir, f"{article.tracking_number}_updated.pdf")
+    doc.save(new_pdf_path)
+
+    # Yeni PDF'yi kaydettik, dosya yolu döndürülebilir
+    article.updated_pdf = new_pdf_path
+    article.save()

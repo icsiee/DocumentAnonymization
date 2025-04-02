@@ -32,6 +32,9 @@ urlpatterns = [
                   path('indir/<str:tracking_number>/', pdf_indir, name='pdf_indir'),
                   path('makale_sil/<int:article_id>/', makale_sil, name='makale_sil'),
                   path('makale/sifreli/<str:tracking_number>/', pdf_goruntule_hakem, name='pdf_goruntule_hakem'),
+                  path('review_article/<int:article_id>/', views.review_article, name='add_review'),
+                  # Burada 'article_id' kullanılıyor
+                  # Değerlendirme ekleme URL'si
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -75,6 +75,7 @@ class Article(models.Model):
     content = models.TextField(blank=True, null=True)
     encrypted_content = models.TextField(blank=True, null=True)
     is_encrypted = models.BooleanField(default=False)
+    updated_pdf = models.FileField(upload_to='updated_articles/', blank=True, null=True)
 
     def get_censored_pdf_url(self):
         """Sansürlü makalenin URL'sini döndürür."""
@@ -153,14 +154,18 @@ class ArticleImage(models.Model):
 
 
 # Değerlendirmeler Modeli
-class Review(models.Model):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Hakem'})
-    review_text = models.TextField()
-    review_date = models.DateTimeField(auto_now_add=True)
+# models.py
 
-    def _str_(self):
-        return f"Review for {self.article.title} by {self.reviewer.username}"
+from django.db import models
+
+class Review(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='reviews')
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Hakem'})
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.reviewer.username} - {self.article.title} Yorum"
 
 
 # Editör Atamaları Modeli
