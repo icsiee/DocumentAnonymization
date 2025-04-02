@@ -40,10 +40,10 @@
             <div class="col-md-6">
                 <div class="card shadow-lg">
                     <div class="card-body">
-                        <h3 class="card-title text-danger">🗑️ Tüm Makaleleri Sil</h3>
+                        <h3 class="card-title text-danger">🗑️ Veritabanını Temizle</h3>
                         <form action="{% url 'delete_all_articles' %}" method="post">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger w-100">❌ Tüm Makaleleri Sil</button>
+                            <button type="submit" class="btn btn-danger w-100">❌ Temizle</button>
                         </form>
                     </div>
                 </div>
@@ -116,8 +116,7 @@
                                             <!-- İndir Butonu -->
     <a href="{% url 'pdf_indir' article.tracking_number %}" class="btn btn-sm btn-primary">
         ⬇️ İndir
-    </a>
-                                                                            <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
+    </a><a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
 
 
                                             <!-- Yükleniyor göstergesi -->

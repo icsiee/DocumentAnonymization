@@ -66,17 +66,15 @@ class Article(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'user_type': 'Yazar'})
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               limit_choices_to={'user_type': 'Yazar'})
     file = models.FileField(upload_to='articles/', blank=True, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Gönderildi')
     tracking_number = models.CharField(max_length=50, unique=True, blank=True)
-    content = models.TextField(blank=True, null=True)  # Orijinal içerik
-    encrypted_content = models.TextField(blank=True, null=True)  # Şifreli içerik
-    topic = models.CharField(max_length=255, blank=True, null=True)
-    subtopic = models.CharField(max_length=255, blank=True, null=True)
-    is_encrypted = models.BooleanField(default=False)  # 🔹 Yeni eklenen alan: Makale şifreli mi?
-
+    content = models.TextField(blank=True, null=True)
+    encrypted_content = models.TextField(blank=True, null=True)
+    is_encrypted = models.BooleanField(default=False)
 
     def encrypt_content(self):
         """Makale içeriğini şifrele"""
@@ -219,6 +217,17 @@ class Subtopic(models.Model):
 
     def __str__(self):
         return self.name
+
+class ArticleSubtopic(models.Model):
+    """Makale ve alt başlık ilişki tablosu (M2M)"""
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('article', 'subtopic')  # Aynı makale-alt başlık çiftini tekrar eklemeyi engeller
+
+    def __str__(self):
+        return f"{self.article.title} → {self.subtopic.name}"
 
 
 class ReviewerSubtopic(models.Model):

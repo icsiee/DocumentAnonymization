@@ -209,51 +209,26 @@ def get_text_embedding(text):
     return outputs.last_hidden_state.mean(dim=1).numpy()  # Ortalama vektörü al
 
 
-def determine_article_topic_bert(article):
-    """BERT modelini kullanarak makalenin konusunu belirler ve günceller."""
-    txt_path = os.path.join(settings.MEDIA_ROOT, "text", f"{article.tracking_number}.txt")
+def determine_article_topics_bert(article):
+    """
+    Makalenin içeriğini analiz ederek ilgili alt başlıkları belirler.
+    """
+    subtopics = Subtopic.objects.all()  # Tüm alt başlıkları al
+    matched_subtopics = []
 
-    try:
-        with open(txt_path, "r", encoding="utf-8") as file:
-            content = file.read()
-    except FileNotFoundError:
-        print(f"Hata: {txt_path} bulunamadı.")
-        return
+    for subtopic in subtopics:
+        if subtopic.name.lower() in article.content.lower():  # Basit eşleşme
+            matched_subtopics.append(subtopic)
 
-    # 📌 Makale içeriğinin vektörünü al
-    article_embedding = get_text_embedding(content)
-
-    best_match = None
-    best_score = -1
-
-    for subtopic, main_topic in TOPIC_MAP:
-        subtopic_embedding = get_text_embedding(subtopic)  # Alt başlık için embedding al
-        score = cosine_similarity(article_embedding, subtopic_embedding)[0][0]  # Benzerlik hesapla
-
-        if score > best_score:
-            best_score = score
-            best_match = (main_topic, subtopic)
-
-    if best_match and best_score > 0.5:  # Benzerlik eşiği belirlenebilir
-        article.topic, article.subtopic = best_match
-    else:
-        article.topic, article.subtopic = "Bilinmiyor", "Bilinmiyor"
-
-    article.save(update_fields=["topic", "subtopic"])
-    print(f"Eşleşme bulundu: {article.subtopic} -> {article.topic}")
-
+    return matched_subtopics
 
 def makale_yukle(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         title = request.POST.get('title')
 
-        if not email:
-            messages.error(request, "Lütfen geçerli bir e-posta adresi girin.")
-            return redirect('makale_yukle')
-
-        if not title:
-            messages.error(request, "Lütfen makale başlığını girin.")
+        if not email or not title:
+            messages.error(request, "Lütfen tüm alanları doldurun.")
             return redirect('makale_yukle')
 
         user, created = User.objects.get_or_create(email=email, defaults={'username': email, 'user_type': 'Yazar', 'is_active': True})
@@ -266,7 +241,6 @@ def makale_yukle(request):
 
         if makale and makale.name.endswith('.pdf'):
             tracking_number = generate_tracking_number()
-
             pdf_filename = f"{tracking_number}.pdf"
             txt_filename = f"{tracking_number}.txt"
 
@@ -277,22 +251,20 @@ def makale_yukle(request):
                 for chunk in makale.chunks():
                     destination.write(chunk)
 
-            # PDF içeriğini çıkarıp TXT olarak kaydet
             extracted_text = pdf_to_text(pdf_path, txt_path, tracking_number)
 
-            # 🔹 Makaleyi kaydet (başlangıçta bilinmiyor)
             article = Article.objects.create(
                 title=title,
                 author=user,
                 file=f"articles/{pdf_filename}",
                 tracking_number=tracking_number,
-                content=extracted_text,
-                topic="Bilinmiyor",
-                subtopic="Bilinmiyor"
+                content=extracted_text
             )
 
-            # 🔹 Konu belirleme işlemi burada çalıştırılır
-            determine_article_topic_bert(article)
+            # 🔹 Makale ile eşleşen alt başlıkları kaydet
+            matched_subtopics = determine_article_topics_bert(article)
+            for subtopic in matched_subtopics:
+                ArticleSubtopic.objects.get_or_create(article=article, subtopic=subtopic)
 
             messages.success(request, f"Makale başarıyla yüklendi! Takip Numaranız: {tracking_number}")
             return redirect('yazar_sayfasi')
@@ -301,8 +273,6 @@ def makale_yukle(request):
             messages.error(request, "Lütfen yalnızca PDF formatında dosya yükleyin!")
 
     return render(request, 'makalesistemi.html')
-
-
 import spacy
 
 # spaCy dil modeli yükleniyor
@@ -570,6 +540,7 @@ def submit_editor_message(request):
         form = EditorMessageForm()
     return render(request, 'submit_editor_message.html', {'form': form})
 
+
 # Editörün mesajları görmesi için
 def list_editor_messages(request):
     editor_messages = Message.objects.all().filter(receiver_id=request.user.id).order_by('-sent_date')
@@ -577,26 +548,6 @@ def list_editor_messages(request):
     return render(request, 'editor.html', {'editor_messages': editor_messages})
 
 
-def assign_reviewers_to_subtopics():
-    subtopics = list(Subtopic.objects.all())
-    reviewers = list(User.objects.filter(user_type='Hakem'))
-
-    if not reviewers:
-        return "Hiç hakem bulunamadı!"
-
-    random.shuffle(reviewers)  # Hakemleri karıştır
-
-    assignments = []
-    for subtopic in subtopics:
-        print(subtopic)
-        assigned_reviewer = random.choice(reviewers)  # Rastgele bir hakem seç
-        assignment, created = ReviewerSubtopic.objects.get_or_create(
-            reviewer=assigned_reviewer,
-            subtopic=subtopic
-        )
-        assignments.append(f"{assigned_reviewer.username} -> {subtopic.name}")
-
-    return assignments  # Atanan hakemleri liste olarak döndür
 
 def revize_et(request, article_id):
     # Makaleyi al
@@ -663,11 +614,6 @@ def revize_et(request, article_id):
 
 
 
-
-
-
-from django.http import Http404, FileResponse
-
 def pdf_goruntule(request, article_id):
     article = get_object_or_404(Article, id=article_id)
 
@@ -680,14 +626,6 @@ def pdf_goruntule(request, article_id):
         raise Http404("PDF dosyası bulunamadı.")
 
     return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
-
-@csrf_exempt
-def generate_random_reviewers(request):
-    if request.method == "POST":
-        result = assign_reviewers_to_subtopics()
-        return JsonResponse({"message": "Atama işlemi tamamlandı!", "details": result})
-
-    return JsonResponse({"error": "Geçersiz istek"}, status=400)
 
 
 from PIL import Image
@@ -717,16 +655,6 @@ def generate_pdf_with_images_and_text(text, images, output_path):
     # PDF'i kaydet
     c.save()
 
-import spacy
-from collections import Counter
-
-from django.shortcuts import render, get_object_or_404
-from .models import User, ReviewerSubtopic
-from collections import defaultdict
-
-from django.shortcuts import render, get_object_or_404
-from .models import User
-
 
 def hakem_page(request, hakem_username):
     """Hakem sayfası işlemleri"""
@@ -742,40 +670,7 @@ def hakem_page(request, hakem_username):
     })
 
 
-import spacy
 
-
-# Şifreleme için Fernet anahtarını oluşturun (Bu anahtar bir kez oluşturulup güvenli bir yerde saklanmalıdır)
-# Anahtarınızı güvenli bir şekilde saklayın (örneğin, çevresel değişkenlerde).
-from cryptography.fernet import Fernet
-from django.conf import settings
-
-from cryptography.fernet import Fernet
-
-# Anahtarı çevresel değişkenden al
-key = settings.FERNET_KEY.encode()  # Anahtarın byte formatına çevrilmesi gerekebilir
-cipher_suite = Fernet(key)
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Article
-
-
-def encrypt_word(word):
-    """Kelimeyi şifreler"""
-    key = settings.FERNET_KEY
-    cipher_suite = Fernet(key)
-    encrypted = cipher_suite.encrypt(word.encode())
-    return encrypted.decode()
-
-
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-
-from cryptography.fernet import Fernet
-
-
-# Şifrelenmiş makaleyi görüntüleme
 def view_encrypted_article(request, article_id):
     article = Article.objects.get(id=article_id)
 
@@ -788,9 +683,6 @@ def view_encrypted_article(request, article_id):
 
 
 from PIL import Image, ImageFilter
-
-from django.conf import settings
-from django.shortcuts import render, redirect
 
 import re
 

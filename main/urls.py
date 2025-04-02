@@ -2,9 +2,7 @@ from django.urls import path
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import yazar_sayfasi, generate_random_reviewers
-from .views import delete_article
-from .views import pdf_goruntule
+
 from .views import *
 
 
@@ -20,7 +18,6 @@ urlpatterns = [
     path('send_message/', views.send_message, name='send_message'),
     path('delete_all_articles/', views.delete_all_articles, name='delete_all_articles'),
     path('makale/revize/<int:article_id>/', views.revize_et, name='revize_et'),
-    path('assign-reviewers/', generate_random_reviewers, name='assign_reviewers'),
     path('encrypt_article/<int:article_id>/', views.encrypt_article, name='encrypt_article'),
     path('download_encrypted_pdf/<int:article_id>/', views.download_encrypted_pdf, name='download_encrypted_pdf'),
     path('<str:hakem_username>/', views.hakem_page, name='hakem_page'),
