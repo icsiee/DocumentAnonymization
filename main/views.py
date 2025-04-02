@@ -214,13 +214,21 @@ def get_text_embedding(text):
 def determine_article_topics_bert(article):
     """
     Makalenin içeriğini analiz ederek ilgili alt başlıkları belirler.
+    Her durumda en az bir alt başlık ataması yapılmasını sağlar.
     """
     subtopics = Subtopic.objects.all()  # Tüm alt başlıkları al
     matched_subtopics = []
 
+    # Basit eşleşme ile alt başlıkları bulmaya çalışıyoruz
     for subtopic in subtopics:
         if subtopic.name.lower() in article.content.lower():  # Basit eşleşme
             matched_subtopics.append(subtopic)
+
+    # Eğer eşleşen alt başlık yoksa, en azından bir alt başlık atayalım
+    if not matched_subtopics:
+        # Burada "Deep Learning" gibi bir alt başlık belirliyoruz, tercihe göre başka bir şey seçilebilir
+        general_subtopic = Subtopic.objects.get_or_create(name="Deep Learning")[0]
+        matched_subtopics.append(general_subtopic)
 
     return matched_subtopics
 
@@ -286,10 +294,6 @@ def makale_yukle(request):
     return render(request, 'makalesistemi.html')
 
 
-import spacy
-
-# spaCy dil modeli yükleniyor
-
 
 # Yazar sayfası
 def yazar_sayfasi(request):
@@ -333,14 +337,6 @@ def makale_durum_sorgulama(request):
         "articles": articles,
         "author_articles": author_articles,
     })
-
-
-
-from .models import Article, User, Message, ReviewerSubtopic, MainSubtopic
-
-
-from .models import Subtopic
-
 
 
 
@@ -890,6 +886,14 @@ from django.contrib.auth.decorators import login_required
 from .models import Article, ArticleSubtopic, ReviewerSubtopic, Assignment, User
 
 
+from django.contrib import messages
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Article, Assignment, User, ArticleSubtopic, ReviewerSubtopic, Log
+from django.http import HttpResponse
+
+
 def send_article_view(request, article_id):
     try:
         article = get_object_or_404(Article, id=article_id)
@@ -944,6 +948,8 @@ def send_article_view(request, article_id):
 
     except Exception as e:
         return HttpResponse(f"<h1>Bir hata oluştu: {e}</h1>")
+
+
 
 
 from django.shortcuts import get_object_or_404, redirect, render

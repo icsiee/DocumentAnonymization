@@ -57,112 +57,108 @@
 
 
 
-            <!-- Makale Listesi -->
-            <div class="col-md-6">
-                <div class="card shadow-lg mt-4">
-                    <div class="card-body">
-                        <h3 class="card-title text-primary">📄 Yüklenmiş Makaleler</h3>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-dark text-center">
-                                    <tr>
-                                        <th>Takip No</th>
-                                        <th>Başlık</th>
-                                        <th>Yazar</th>
-                                                <th>Alt Başlıklar</th> <!-- 🆕 Yeni Sütun -->
+  <!-- Makale Listesi -->
+<div class="col-md-6">
+    <div class="card shadow-lg mt-4">
+        <div class="card-body">
+            <h3 class="card-title text-primary">📄 Yüklenmiş Makaleler</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>Takip No</th>
+                            <th>Başlık</th>
+                            <th>Yazar</th>
+                            <th>Alt Başlıklar</th> <!-- 🆕 Yeni Sütun -->
+                            <th>Durum</th>
+                            <th>Gönderim Tarihi</th>
+                            <th>Şifreli mi?</th>
+                            <th>İşlemler</th>
+                            <th>Sil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in articles %}
+                        <tr class="text-center">
+                            <td>
+                                <a href="{% url 'pdf_goruntule' article.tracking_number %}" target="_blank" class="text-decoration-none">
+                                    {{ article.tracking_number }}
+                                </a>
+                            </td>
 
-                                        <th>Durum</th>
-                                        <th>Gönderim Tarihi</th>
-                                        <th>Şifreli mi?</th>
+                            <td>{{ article.title }}</td>
 
-                                        <th>İşlemler</th>
-                                        <th>Sil</th>
+                            <td>{{ article.author.username }}</td>
 
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for article in articles %}
-                                    <tr class="text-center">
-<td>
-    <a href="{% url 'pdf_goruntule' article.tracking_number %}" target="_blank" class="text-decoration-none">
-        {{ article.tracking_number }}
-    </a>
-</td>
+                            <!-- 🆕 Alt Başlıkları Listeleme -->
+                            <td>
+                                {% with article.articlesubtopic_set.all as subtopics %}
+                                    {% if subtopics %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for subtopic in subtopics %}
+                                                <li>🔹 {{ subtopic.subtopic.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-muted">Alt başlık atanmadı</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
 
+                            <td>
+                                <span class="badge bg-info">{{ article.get_status_display }}</span>
+                            </td>
 
+                            <td>{{ article.submission_date }}</td>
 
-                                        <td>{{ article.title }}</td>
+                            <td>
+                                {% if article.is_encrypted %}
+                                    <span class="badge bg-success">🔒 Şifreli</span>
+                                {% else %}
+                                    <span class="badge bg-danger">🔓 Şifresiz</span>
+                                {% endif %}
+                            </td>
 
-                                        <td>{{ article.author.username }}</td>
+                            <td>
+                                <!-- Benzersiz ID'li şifreleme butonu -->
+                                <!-- Makale Şifrele/Kaldır Butonu -->
+                                <button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
+                                    {% if article.is_encrypted %}
+                                        🔓 Şifreyi Kaldır
+                                    {% else %}
+                                        🔒 Makale Şifrele
+                                    {% endif %}
+                                </button>
+                                <!-- İndir Butonu -->
+                                <a href="{% url 'pdf_indir' article.tracking_number %}" class="btn btn-sm btn-primary">
+                                    ⬇️ İndir
+                                </a>
+                                <a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
 
-                                          <!-- 🆕 Alt Başlıkları Listeleme -->
-        <td>
-            {% with article.articlesubtopic_set.all as subtopics %}
-                {% if subtopics %}
-                    <ul class="list-unstyled">
-                        {% for subtopic in subtopics %}
-                            <li>🔹 {{ subtopic.subtopic.name }}</li>
+                                <!-- Yükleniyor göstergesi -->
+                                <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="progressBar-{{ article.id }}"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <!-- Sil Butonu -->
+                                <button class="btn btn-sm btn-danger deleteBtn" data-article-id="{{ article.id }}">
+                                    🗑️ Sil
+                                </button>
+                            </td>
+
+                        </tr>
                         {% endfor %}
-                    </ul>
-                {% else %}
-                    <span class="text-muted">Alt başlık atanmadı</span>
-                {% endif %}
-            {% endwith %}
-        </td>
-
-
-                                        <td>
-                                            <span class="badge bg-info">{{ article.get_status_display }}</span>
-                                        </td>
-                                        <td>{{ article.submission_date }}</td>
-
-<td>
-    {% if article.is_encrypted %}
-        <span class="badge bg-success">🔒 Şifreli</span>
-    {% else %}
-        <span class="badge bg-danger">🔓 Şifresiz</span>
-    {% endif %}
-</td>
-
-                                        <td>
-                                            <!-- Benzersiz ID'li şifreleme butonu -->
-<!-- Makale Şifrele/Kaldır Butonu -->
-<button class="btn btn-sm btn-info encryptBtn" id="encryptBtn-{{ article.id }}" data-article-id="{{ article.id }}">
-    {% if article.is_encrypted %}
-        🔓 Şifreyi Kaldır
-    {% else %}
-        🔒 Makale Şifrele
-    {% endif %}
-</button>
-                                            <!-- İndir Butonu -->
-    <a href="{% url 'pdf_indir' article.tracking_number %}" class="btn btn-sm btn-primary">
-        ⬇️ İndir
-    </a><a href="{% url 'send_article' article.id %}" class="btn btn-sm btn-success">✉️ Gönder</a>
-
-
-                                            <!-- Yükleniyor göstergesi -->
-                                            <div id="loading-{{ article.id }}" class="loading-indicator" style="display: none;">
-                                                <div class="progress">
-                                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" id="progressBar-{{ article.id }}"></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-    <!-- Sil Butonu -->
-    <button class="btn btn-sm btn-danger deleteBtn" data-article-id="{{ article.id }}">
-        🗑️ Sil
-    </button>
-</td>
-
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
+</div>
+
 
 
 
@@ -260,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 if (data.success) {
                     let button = document.getElementById(`encryptBtn-${articleId}`);
-                    let statusCell = button.closest("tr").querySelector("td:nth-child(6)");
+                    let statusCell = button.closest("tr").querySelector("td:nth-child(7)"); // Burayı düzelt
 
                     if (data.is_encrypted) {
                         statusCell.innerHTML = `<span class="badge bg-success">🔒 Şifreli</span>`;
@@ -295,49 +291,33 @@ function getCookie(name) {
     return cookieValue;
 }
 
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".deleteBtn").forEach(button => {
+        button.addEventListener("click", function() {
+            let articleId = this.getAttribute("data-article-id");
 
-
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll(".deleteBtn").forEach(button => {
-            button.addEventListener("click", function() {
-                let articleId = this.getAttribute("data-article-id");
-
-                if (confirm("Bu makaleyi silmek istediğinize emin misiniz?")) {
-                    fetch(`/delete_article/${articleId}/`, {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": getCookie("csrftoken")
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                    console.log("Hata");
-                        if (data.success) {
-                            alert("Makale başarıyla silindi.");
-                            location.reload();  // Sayfayı yenileyerek listeyi güncelle
-                        } else {
-                            alert("Hata oluştu: " + data.error);
-                        }
-                    })
-                    .catch(error => console.error("Silme hatası:", error));
-                }
-            });
-        });
-
-        // CSRF token alma fonksiyonu
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                document.cookie.split(';').forEach(cookie => {
-                    let trimmedCookie = cookie.trim();
-                    if (trimmedCookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(trimmedCookie.split('=')[1]);
+            if (confirm("Bu makaleyi silmek istediğinize emin misiniz?")) {
+                fetch(`/delete_article/${articleId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken")
                     }
-                });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Makale başarıyla silindi.");
+                        location.reload();  // Sayfayı yenileyerek listeyi güncelle
+                    } else {
+                        alert("Hata oluştu: " + data.error);
+                    }
+                })
+                .catch(error => console.error("Silme hatası:", error));
             }
-            return cookieValue;
-        }
+        });
     });
+});
+
 </script>
 
 <!-- ========================================= -->
@@ -377,6 +357,7 @@ function getCookie(name) {
 <!-- ========================================= -->
 
 
+</div>
 
 
 </body>
